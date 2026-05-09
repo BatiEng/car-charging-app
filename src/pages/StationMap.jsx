@@ -74,12 +74,12 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     <div className="flex flex-col h-full">
 
       {/* ── Filter Bar ── */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-4 shrink-0">
-        <span className="text-sm font-semibold text-slate-600">Filters:</span>
+      <div className="bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center gap-2 shrink-0">
+        <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Filters:</span>
 
         <select
           value={filterConn} onChange={(e) => setFilterConn(e.target.value)}
-          className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="text-xs sm:text-sm border border-slate-300 rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 flex-1 sm:flex-none"
         >
           <option value="all">All Connectors</option>
           <option value="CCS">CCS</option>
@@ -89,7 +89,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
 
         <select
           value={filterPow} onChange={(e) => setFilterPow(e.target.value)}
-          className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="text-xs sm:text-sm border border-slate-300 rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500 flex-1 sm:flex-none"
         >
           <option value="all">All Power Levels</option>
           <option value="slow">AC Slow (≤22 kW)</option>
@@ -100,32 +100,33 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
         {directions && (
           <button
             onClick={() => setDirections(null)}
-            className="ml-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
+            className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition-colors"
           >
-            ✕ Clear Route
+            ✕ Route
           </button>
         )}
 
-        {/* Legend */}
-        <div className="ml-auto flex items-center gap-4 text-xs text-slate-400">
+        {/* Legend — hidden on small screens */}
+        <div className="hidden sm:flex ml-auto items-center gap-3 text-xs text-slate-400">
           {['available', 'occupied', 'offline'].map((s) => (
-            <span key={s} className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-full inline-block" style={{ background: STATUS_COLOR[s] }} />
+            <span key={s} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: STATUS_COLOR[s] }} />
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </span>
           ))}
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full inline-block bg-blue-500" />
+          <span className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded-full inline-block bg-blue-500" />
             You
           </span>
         </div>
       </div>
 
       {/* ── Map + Right Panel ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Mobile: stack vertically. Desktop: side-by-side */}
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
 
-        {/* Map */}
-        <div className="flex-1 relative">
+        {/* Map — 55vh on mobile, flex-1 on desktop */}
+        <div className="h-[55vh] md:h-auto md:flex-1 relative shrink-0 md:shrink">
           {!isLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-10">
               <div className="text-center">
@@ -215,8 +216,8 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           )}
         </div>
 
-        {/* ── Right Panel ── */}
-        <div className="w-80 bg-white border-l border-slate-200 flex flex-col overflow-hidden shrink-0">
+        {/* ── Right Panel — full width below map on mobile, fixed 320px on desktop ── */}
+        <div className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-slate-200 flex flex-col overflow-hidden md:shrink-0">
           <div className="px-4 py-3 border-b border-slate-100">
             <p className="text-sm font-semibold text-slate-700">{filtered.length} stations found</p>
             <p className="text-xs text-slate-400">Near Alsancak, İzmir</p>

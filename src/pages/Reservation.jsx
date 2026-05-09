@@ -95,8 +95,8 @@ export default function Reservation({
     const endHour = pad2(+resData.slot.split(':')[0] + resData.duration)
 
     return (
-      <div className="p-8 max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl border border-green-200 shadow-sm p-8">
+      <div className="p-4 sm:p-8 max-w-2xl mx-auto">
+        <div className="bg-white rounded-2xl border border-green-200 shadow-sm p-5 sm:p-8">
           <div className="text-center mb-6">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
               ✅
@@ -163,14 +163,14 @@ export default function Reservation({
 
   /* ─── Booking Form ─── */
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Make a Reservation</h1>
+    <div className="p-4 sm:p-8 max-w-3xl mx-auto">
+      <div className="mb-5">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Make a Reservation</h1>
         <p className="text-slate-400 mt-1 text-sm">Booking a slot at {selectedStation.name}</p>
       </div>
 
       {/* Context cards */}
-      <div className="grid grid-cols-2 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <p className="text-xs text-slate-400 uppercase tracking-wide font-semibold mb-1">Station</p>
           <p className="font-semibold text-slate-800">{selectedStation.name}</p>
@@ -186,7 +186,7 @@ export default function Reservation({
       </div>
 
       {/* Step 1 – Charger */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 mb-4">
         <p className="font-semibold text-slate-800 mb-0.5">Step 1 — Select Charger</p>
         <p className="text-xs text-slate-400 mb-4">
           Only chargers compatible with your connector ({selectedVehicle.connector}) are shown
@@ -233,10 +233,10 @@ export default function Reservation({
 
       {/* Step 2 – Date & Time */}
       {charger && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 mb-4">
           <p className="font-semibold text-slate-800 mb-4">Step 2 — Select Date & Time</p>
 
-          <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Date</label>
               <input
@@ -262,7 +262,7 @@ export default function Reservation({
           <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
             Available Time Slots
           </label>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
             {getSlots().map((s) => (
               <button
                 key={s.time}

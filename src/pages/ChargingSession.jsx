@@ -29,8 +29,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   /* ─── No session ─── */
   if (!activeSession) {
     return (
-      <div className="p-8 max-w-xl mx-auto text-center">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-14">
+      <div className="p-4 sm:p-8 max-w-xl mx-auto text-center">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 sm:p-14">
           <div className="text-5xl mb-4">⚡</div>
           <h2 className="text-xl font-semibold text-slate-800 mb-2">No Active Session</h2>
           <p className="text-slate-400 text-sm mb-6">Complete a reservation first to start charging.</p>
@@ -54,8 +54,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   /* ─── Completed ─── */
   if (done) {
     return (
-      <div className="p-8 max-w-xl mx-auto">
-        <div className="bg-white rounded-2xl border border-green-200 shadow-sm p-8 text-center">
+      <div className="p-4 sm:p-8 max-w-xl mx-auto">
+        <div className="bg-white rounded-2xl border border-green-200 shadow-sm p-5 sm:p-8 text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center text-4xl mx-auto mb-5">
             🎉
           </div>
@@ -108,7 +108,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
 
   /* ─── Active Session ─── */
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-8 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -164,7 +164,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {[
           { label: 'Cost So Far',      value: `${cost} TL`,              color: 'text-green-600' },
           { label: 'Session Duration', value: fmtTime(elapsed),          color: 'text-slate-800' },
@@ -172,7 +172,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
           { label: 'Energy Consumed',  value: `${kwh.toFixed(1)} kWh`,   color: 'text-slate-800' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl border border-slate-200 p-5 text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
+            <p className={`text-xl sm:text-2xl font-bold ${color}`}>{value}</p>
             <p className="text-xs text-slate-400 mt-1">{label}</p>
           </div>
         ))}

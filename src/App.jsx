@@ -30,7 +30,8 @@ export default function App() {
     <div className="flex h-screen overflow-hidden bg-slate-100">
       <Sidebar view={view} setView={setView} hasSession={!!activeSession} />
 
-      <main className="flex-1 overflow-auto">
+      {/* pb-16 on mobile = space for the fixed bottom nav bar */}
+      <main className="flex-1 overflow-auto pb-16 md:pb-0">
         {view === 'vehicles' && (
           <VehicleRegistration
             vehicles={vehicles}           setVehicles={setVehicles}
