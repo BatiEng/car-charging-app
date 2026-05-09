@@ -3,6 +3,16 @@ import { BRANDS, CONNECTORS } from '../data/stations'
 
 const EMPTY = { brand: '', model: '', battery: '', connector: '', plate: '' }
 
+const Field = ({ label, field, errors, children }) => (
+  <div>
+    <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
+      {label}
+    </label>
+    {children}
+    {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
+  </div>
+)
+
 export default function VehicleRegistration({
   vehicles, setVehicles,
   selectedVehicle, setSelectedVehicle,
@@ -38,15 +48,7 @@ export default function VehicleRegistration({
       errors[field] ? 'border-red-400 bg-red-50' : 'border-slate-300'
     } rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition`
 
-  const Field = ({ label, field, children }) => (
-    <div>
-      <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1">
-        {label}
-      </label>
-      {children}
-      {errors[field] && <p className="text-red-500 text-xs mt-1">{errors[field]}</p>}
-    </div>
-  )
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -65,7 +67,7 @@ export default function VehicleRegistration({
           <h2 className="font-semibold text-slate-800 mb-5">Register New Vehicle</h2>
           <div className="space-y-4">
 
-            <Field label="Brand" field="brand">
+            <Field label="Brand" field="brand" errors={errors}>
               <select className={ic('brand')} value={form.brand}
                 onChange={(e) => setForm({ ...form, brand: e.target.value })}>
                 <option value="">Select brand…</option>
@@ -73,19 +75,19 @@ export default function VehicleRegistration({
               </select>
             </Field>
 
-            <Field label="Model" field="model">
+            <Field label="Model" field="model" errors={errors}>
               <input className={ic('model')} placeholder="e.g. Model 3, i4, e-tron"
                 value={form.model}
                 onChange={(e) => setForm({ ...form, model: e.target.value })} />
             </Field>
 
-            <Field label="Battery Capacity (kWh)" field="battery">
+            <Field label="Battery Capacity (kWh)" field="battery" errors={errors}>
               <input type="number" className={ic('battery')} placeholder="e.g. 75"
                 value={form.battery}
                 onChange={(e) => setForm({ ...form, battery: e.target.value })} />
             </Field>
 
-            <Field label="Connector Type" field="connector">
+            <Field label="Connector Type" field="connector" errors={errors}>
               <select className={ic('connector')} value={form.connector}
                 onChange={(e) => setForm({ ...form, connector: e.target.value })}>
                 <option value="">Select connector…</option>
@@ -93,7 +95,7 @@ export default function VehicleRegistration({
               </select>
             </Field>
 
-            <Field label="Plate Number" field="plate">
+            <Field label="Plate Number" field="plate" errors={errors}>
               <input className={ic('plate')} placeholder="e.g. 35 EV 2024"
                 value={form.plate}
                 onChange={(e) => setForm({ ...form, plate: e.target.value.toUpperCase() })} />
