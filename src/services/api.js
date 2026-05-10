@@ -1,0 +1,110 @@
+const BASE = import.meta.env.VITE_API_URL || '/api';
+
+// ── Token helpers ─────────────────────────────────────────────
+export const getToken  = ()        => localStorage.getItem('ev_token');
+export const setToken  = (t)       => localStorage.setItem('ev_token', t);
+export const clearToken = ()       => localStorage.removeItem('ev_token');
+
+// ── Core fetch wrapper ────────────────────────────────────────
+async function request(path, options = {}) {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  const res  = await fetch(`${BASE}/${path}`, { ...options, headers });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  return data;
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+export const login = async (email, password) => {
+  const data = await request('auth.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'login', email, password }),
+  });
+  setToken(data.token);
+  return data.user;
+};
+
+export const register = async (name, email, password) => {
+  const data = await request('auth.php', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'register', name, email, password }),
+  });
+  setToken(data.token);
+  return data.user;
+};
+
+export const logout = () => {
+  clearToken();
+  return Promise.resolve();
+};
+
+export const me = () => request('auth.php?action=me');
+
+// ── Stations ──────────────────────────────────────────────────
+export const getStations = () => request('stations.php');
+
+export const updateStation = (id, data) =>
+  request(`stations.php?id=${id}`, { method: 'PUT', body: JSON.stringify(data) });
+
+// ── Chargers ──────────────────────────────────────────────────
+export const patchCharger = (id, status) =>
+  request(`chargers.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+
+export const getCharger = (id) => request(`chargers.php?id=${id}`);
+
+// ── Vehicles ──────────────────────────────────────────────────
+export const getVehicles = () => request('vehicles.php');
+
+export const addVehicle = (data) =>
+  request('vehicles.php', { method: 'POST', body: JSON.stringify(data) });
+
+export const updateVehicle = (id, data) =>
+  request(`vehicles.php?id=${id}`, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteVehicle = (id) =>
+  request(`vehicles.php?id=${id}`, { method: 'DELETE' });
+
+// ── Wallet ────────────────────────────────────────────────────
+export const getWallet = () => request('wallet.php');
+
+export const topUpWallet = (amount, card_number) =>
+  request('wallet.php', { method: 'POST', body: JSON.stringify({ amount, card_number }) });
+
+// ── Reservations ──────────────────────────────────────────────
+export const getReservations = () => request('reservations.php');
+
+export const createReservation = (data) =>
+  request('reservations.php', { method: 'POST', body: JSON.stringify(data) });
+
+export const cancelReservation = (id) =>
+  request(`reservations.php?id=${id}`, { method: 'DELETE' });
+
+// ── Charging Sessions ─────────────────────────────────────────
+export const getSessions = () => request('charging_sessions.php');
+
+export const startSession = (reservation_id, vehicle_pin) =>
+  request('charging_sessions.php', { method: 'POST', body: JSON.stringify({ reservation_id, vehicle_pin }) });
+
+export const endSession = (id, kwh_consumed) =>
+  request(`charging_sessions.php?id=${id}`, { method: 'PUT', body: JSON.stringify({ kwh_consumed }) });
+
+// ── Notifications ─────────────────────────────────────────────
+export const getNotifications = () => request('notifications.php');
+
+export const markNotificationRead = (id) =>
+  request('notifications.php', { method: 'PUT', body: JSON.stringify({ id }) });
+
+export const markAllNotificationsRead = () =>
+  request('notifications.php', { method: 'PUT', body: JSON.stringify({ action: 'mark_all_read' }) });
+
+// ── Admin ─────────────────────────────────────────────────────
+export const adminGet = (type) => request(`admin.php?type=${type}`);
+
+export const adminUpdateUser = (data) =>
+  request('admin.php', { method: 'PUT', body: JSON.stringify(data) });

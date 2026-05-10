@@ -1,42 +1,88 @@
-import { useState } from 'react'
-import { useJsApiLoader } from '@react-google-maps/api'
+import { useState } from 'react';
+import { useJsApiLoader } from '@react-google-maps/api';
 
-import Sidebar             from './components/Sidebar'
-import VehicleRegistration from './pages/VehicleRegistration'
-import StationMap          from './pages/StationMap'
-import Reservation         from './pages/Reservation'
-import ChargingSession     from './pages/ChargingSession'
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Sidebar             from './components/Sidebar';
+import Login               from './pages/Login';
+import VehicleRegistration from './pages/VehicleRegistration';
+import StationMap          from './pages/StationMap';
+import Reservation         from './pages/Reservation';
+import ChargingSession     from './pages/ChargingSession';
+import WalletPage          from './pages/WalletPage';
+import MyReservations      from './pages/MyReservations';
+import AdminDashboard      from './pages/AdminDashboard';
+import OperatorDashboard   from './pages/OperatorDashboard';
+import TechnicianView      from './pages/TechnicianView';
 
-const GOOGLE_MAPS_LIBRARIES = ['places']
+const GOOGLE_MAPS_LIBRARIES = ['places'];
 
-export default function App() {
-  /* ── Google Maps API ── */
+function AppInner() {
+  const { user, loading } = useAuth();
+
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
-  })
+  });
 
   /* ── Global state ── */
-  const [view,            setView]            = useState('vehicles')
-  const [vehicles,        setVehicles]        = useState([
-    { id: 1, brand: 'Tesla', model: 'Model 3', battery: 75, connector: 'CCS', plate: '35 EV 2024' },
-  ])
-  const [selectedVehicle, setSelectedVehicle] = useState(null)
-  const [selectedStation, setSelectedStation] = useState(null)
-  const [reservation,     setReservation]     = useState(null)
-  const [activeSession,   setActiveSession]   = useState(null)
+  const [view, setView] = useState(() => {
+    try { if (localStorage.getItem('ev_active_session')) return 'session'; } catch {}
+    if (!user) return 'login';
+    if (user.role === 'admin')      return 'admin';
+    if (user.role === 'operator')   return 'operator';
+    if (user.role === 'technician') return 'technician';
+    return 'vehicles';
+  });
+
+  const [vehicles,        setVehicles]        = useState([]);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedStation, setSelectedStation] = useState(null);
+  const [reservation,     setReservation]     = useState(null);
+
+  // Persist active session across refreshes
+  const [activeSession, setActiveSessionRaw] = useState(() => {
+    try { const s = localStorage.getItem('ev_active_session'); return s ? JSON.parse(s) : null; }
+    catch { return null; }
+  });
+  const setActiveSession = (s) => {
+    setActiveSessionRaw(s);
+    if (s) localStorage.setItem('ev_active_session', JSON.stringify(s));
+    else   localStorage.removeItem('ev_active_session');
+  };
+
+  // If auth state changes (login/logout), redirect to the right default view
+  const handleSetView = (v) => setView(v);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="text-center">
+          <div className="text-5xl mb-4 animate-pulse">⚡</div>
+          <p className="text-slate-400">Yükleniyor…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-100">
-      <Sidebar view={view} setView={setView} hasSession={!!activeSession} />
+    <div className="flex h-screen overflow-hidden bg-slate-950">
+      <Sidebar view={view} setView={handleSetView} hasSession={!!activeSession} />
 
-      {/* pb-16 on mobile = space for the fixed bottom nav bar */}
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
+      {/* pb-16 on mobile = space for fixed bottom nav */}
+      <main className={`flex-1 overflow-auto pb-16 md:pb-0 ${
+        view === 'map' || view === 'technician' ? 'flex flex-col' : ''
+      }`}>
+
+        {/* ── Driver views ── */}
         {view === 'vehicles' && (
           <VehicleRegistration
-            vehicles={vehicles}           setVehicles={setVehicles}
+            vehicles={vehicles}               setVehicles={setVehicles}
             selectedVehicle={selectedVehicle} setSelectedVehicle={setSelectedVehicle}
-            setView={setView}
+            setView={handleSetView}
           />
         )}
 
@@ -45,7 +91,7 @@ export default function App() {
             isLoaded={isLoaded}
             selectedStation={selectedStation} setSelectedStation={setSelectedStation}
             selectedVehicle={selectedVehicle}
-            setView={setView}
+            setView={handleSetView}
           />
         )}
 
@@ -54,9 +100,8 @@ export default function App() {
             isLoaded={isLoaded}
             selectedStation={selectedStation}
             selectedVehicle={selectedVehicle}
-            setView={setView}
+            setView={handleSetView}
             setReservation={setReservation}
-            setActiveSession={setActiveSession}
           />
         )}
 
@@ -64,10 +109,33 @@ export default function App() {
           <ChargingSession
             activeSession={activeSession}
             setActiveSession={setActiveSession}
-            setView={setView}
+            setView={handleSetView}
           />
+        )}
+
+        {view === 'wallet' && <WalletPage />}
+
+        {view === 'myreservations' && <MyReservations setView={handleSetView} />}
+
+        {/* ── Admin views ── */}
+        {view === 'admin' && <AdminDashboard />}
+
+        {/* ── Operator views ── */}
+        {view === 'operator' && <OperatorDashboard />}
+
+        {/* ── Technician views ── */}
+        {view === 'technician' && (
+          <TechnicianView />
         )}
       </main>
     </div>
-  )
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
+  );
 }
