@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -28,7 +28,7 @@ function AppInner() {
   const [view, setView] = useState(() => {
     try { if (localStorage.getItem('ev_active_session')) return 'session'; } catch {}
     if (!user) return 'login';
-    if (user.role === 'admin')      return 'admin';
+    if (user.role === 'admin')      return 'admin-users';
     if (user.role === 'operator')   return 'operator';
     if (user.role === 'technician') return 'technician';
     return 'vehicles';
@@ -38,6 +38,26 @@ function AppInner() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [selectedStation, setSelectedStation] = useState(null);
   const [reservation,     setReservation]     = useState(null);
+
+  // Kullanıcı çıkış yapınca (user→null) tüm filtre/seçim state'leri temizle
+  // Giriş yapınca role'e göre doğru view'a yönlendir
+  useEffect(() => {
+    if (!user) {
+      setVehicles([]);
+      setSelectedVehicle(null);
+      setSelectedStation(null);
+      setReservation(null);
+      return;
+    }
+    const adminViews    = ['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-map'];
+    const operatorViews = ['operator','operator-map'];
+    const techViews     = ['technician'];
+    const driverViews   = ['vehicles','map','reservation','myreservations','session','wallet'];
+    if (user.role === 'admin'      && !adminViews.includes(view))    setView('admin-users');
+    if (user.role === 'operator'   && !operatorViews.includes(view)) setView('operator');
+    if (user.role === 'technician' && !techViews.includes(view))     setView('technician');
+    if (user.role === 'driver'     && !driverViews.includes(view))   setView('vehicles');
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persist active session across refreshes
   const [activeSession, setActiveSessionRaw] = useState(() => {
@@ -74,7 +94,8 @@ function AppInner() {
 
       {/* pb-16 on mobile = space for fixed bottom nav */}
       <main className={`flex-1 overflow-auto pb-16 md:pb-0 ${
-        view === 'map' || view === 'technician' ? 'flex flex-col' : ''
+        view === 'map' || view === 'admin-map' || view === 'operator-map' || view === 'technician'
+          ? 'flex flex-col' : ''
       }`}>
 
         {/* ── Driver views ── */}
@@ -92,6 +113,7 @@ function AppInner() {
             selectedStation={selectedStation} setSelectedStation={setSelectedStation}
             selectedVehicle={selectedVehicle}
             setView={handleSetView}
+            user={user}
           />
         )}
 
@@ -117,11 +139,33 @@ function AppInner() {
 
         {view === 'myreservations' && <MyReservations setView={handleSetView} />}
 
-        {/* ── Admin views ── */}
-        {view === 'admin' && <AdminDashboard />}
+        {/* ── Admin views — her sekme ayrı sayfa ── */}
+        {['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue'].includes(view) && (
+          <AdminDashboard tab={view.replace('admin-','')} isLoaded={isLoaded} />
+        )}
+        {view === 'admin-map' && (
+          <StationMap
+            isLoaded={isLoaded}
+            readOnly={true}
+            selectedStation={selectedStation} setSelectedStation={setSelectedStation}
+            selectedVehicle={null}
+            setView={handleSetView}
+            user={user}
+          />
+        )}
 
         {/* ── Operator views ── */}
-        {view === 'operator' && <OperatorDashboard />}
+        {view === 'operator' && <OperatorDashboard isLoaded={isLoaded} />}
+        {view === 'operator-map' && (
+          <StationMap
+            isLoaded={isLoaded}
+            readOnly={true}
+            selectedStation={selectedStation} setSelectedStation={setSelectedStation}
+            selectedVehicle={null}
+            setView={handleSetView}
+            user={user}
+          />
+        )}
 
         {/* ── Technician views ── */}
         {view === 'technician' && (

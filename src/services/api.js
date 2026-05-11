@@ -49,10 +49,22 @@ export const me = () => request('auth.php?action=me');
 // ── Stations ──────────────────────────────────────────────────
 export const getStations = () => request('stations.php');
 
+export const createStation = (data) =>
+  request('stations.php', { method: 'POST', body: JSON.stringify(data) });
+
 export const updateStation = (id, data) =>
   request(`stations.php?id=${id}`, { method: 'PUT', body: JSON.stringify(data) });
 
 // ── Chargers ──────────────────────────────────────────────────
+export const createCharger = (data) =>
+  request('chargers.php', { method: 'POST', body: JSON.stringify(data) });
+
+export const updateCharger = (id, data) =>
+  request(`chargers.php?id=${id}`, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteCharger = (id) =>
+  request(`chargers.php?id=${id}`, { method: 'DELETE' });
+
 export const patchCharger = (id, status) =>
   request(`chargers.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
 
@@ -107,4 +119,10 @@ export const markAllNotificationsRead = () =>
 export const adminGet = (type) => request(`admin.php?type=${type}`);
 
 export const adminUpdateUser = (data) =>
-  request('admin.php', { method: 'PUT', body: JSON.stringify(data) });
+  request('admin.php', { method: 'PUT', body: JSON.stringify({ ...data, entity: 'user' }) });
+
+export const adminUpdateStation = (data) =>
+  request('admin.php', { method: 'PUT', body: JSON.stringify({ ...data, entity: 'station' }) });
+
+export const adminUpdateReservation = (data) =>
+  request('admin.php', { method: 'PUT', body: JSON.stringify({ ...data, entity: 'reservation' }) });

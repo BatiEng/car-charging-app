@@ -11,13 +11,17 @@ const DRIVER_NAV = [
 ];
 
 const ADMIN_NAV = [
-  { id: 'admin',       label: 'Admin',     fullLabel: 'Admin Paneli',       icon: '🛡️' },
-  { id: 'map',         label: 'Harita',    fullLabel: 'İstasyon Haritası',  icon: '🗺️' },
+  { id: 'admin-users',        label: 'Kullanıcılar',  fullLabel: 'Kullanıcılar',       icon: '👤' },
+  { id: 'admin-stations',     label: 'İstasyonlar',   fullLabel: 'İstasyonlar',        icon: '🏪' },
+  { id: 'admin-reservations', label: 'Rezervasyonlar',fullLabel: 'Rezervasyonlar',     icon: '📅' },
+  { id: 'admin-sessions',     label: 'Oturumlar',     fullLabel: 'Şarj Oturumları',    icon: '⚡' },
+  { id: 'admin-revenue',      label: 'Gelir',         fullLabel: 'Gelir Raporu',       icon: '💰' },
+  { id: 'admin-map',          label: 'Harita',        fullLabel: 'İstasyon Haritası',  icon: '🗺️' },
 ];
 
 const OPERATOR_NAV = [
-  { id: 'operator',    label: 'İstasyon',  fullLabel: 'İstasyonum',         icon: '🏪' },
-  { id: 'map',         label: 'Harita',    fullLabel: 'Harita',             icon: '🗺️' },
+  { id: 'operator',           label: 'İstasyonum',   fullLabel: 'İstasyonlarım',       icon: '🏪' },
+  { id: 'operator-map',       label: 'Harita',       fullLabel: 'İstasyon Haritası',   icon: '🗺️' },
 ];
 
 const TECHNICIAN_NAV = [

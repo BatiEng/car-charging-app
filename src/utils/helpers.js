@@ -1,13 +1,17 @@
 export const STATUS_COLOR = {
-  available: '#22c55e',
-  occupied:  '#eab308',
-  offline:   '#ef4444',
+  available:   '#22c55e',
+  occupied:    '#eab308',
+  offline:     '#ef4444',
+  maintenance: '#f97316',
+  inactive:    '#6b7280',
 }
 
 export const STATUS_BADGE = {
-  available: 'bg-green-100 text-green-700',
-  occupied:  'bg-yellow-100 text-yellow-700',
-  offline:   'bg-red-100 text-red-700',
+  available:   'bg-green-100 text-green-700',
+  occupied:    'bg-yellow-100 text-yellow-700',
+  offline:     'bg-red-100 text-red-700',
+  maintenance: 'bg-orange-100 text-orange-700',
+  inactive:    'bg-slate-200 text-slate-600',
 }
 
 export const getStationStatus = (station) => {
