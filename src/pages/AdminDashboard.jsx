@@ -5,7 +5,7 @@ import {
   adminGet, adminUpdateUser, adminUpdateStation, adminUpdateReservation,
   adminDeleteUser, getStationUsage,
   createStation, createCharger, updateCharger, deleteCharger, getStations,
-  getMyIssues, patchIssue,
+  getMyIssues, patchIssue, getTechnicians,
 } from '../services/api';
 import { MAP_CENTER } from '../data/stations';
 import { CONNECTORS } from '../data/stations';
@@ -769,15 +769,21 @@ function VehiclesTab() {
 const ISSUE_STATUS_LABELS = { open: '🔴 Açık', in_progress: '🟡 İnceleniyor', resolved: '✅ Çözüldü' };
 
 function IssuesTab() {
-  const [rows,    setRows]    = useState([]);
-  const [edit,    setEdit]    = useState(null); // { id, status }
-  const [saving,  setSaving]  = useState(false);
-  const [msg,     setMsg]     = useState('');
-  const [detail,  setDetail]  = useState(null); // tam satır
-  const [search,  setSearch]  = useState('');
+  const [rows,         setRows]         = useState([]);
+  const [technicians,  setTechnicians]  = useState([]);
+  const [edit,         setEdit]         = useState(null);  // { id, status }
+  const [techModal,    setTechModal]    = useState(null);  // { id, issueTitle, stationName } — teknisyen seçim modalı
+  const [selectedTech, setSelectedTech] = useState('');
+  const [saving,       setSaving]       = useState(false);
+  const [msg,          setMsg]          = useState('');
+  const [detail,       setDetail]       = useState(null);
+  const [search,       setSearch]       = useState('');
 
   const load = () => getMyIssues().then(setRows).catch(() => {});
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    getTechnicians().then(setTechnicians).catch(() => {});
+  }, []);
 
   const filtered = rows.filter(r =>
     !search ||
@@ -790,11 +796,31 @@ function IssuesTab() {
   const inProgressCount = rows.filter(r => r.status === 'in_progress').length;
 
   const handleSave = async () => {
+    // in_progress → teknisyen seçim modalı
+    if (edit.status === 'in_progress') {
+      setTechModal({ id: edit.id, issueTitle: rows.find(r => r.id === edit.id)?.title, stationName: rows.find(r => r.id === edit.id)?.station_name });
+      setSelectedTech('');
+      setEdit(null);
+      return;
+    }
     setSaving(true);
     try {
       await patchIssue(edit.id, edit.status);
       setMsg('Durum güncellendi ✓');
       setEdit(null);
+      load();
+    } catch (e) { setMsg(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleAssignTechnician = async () => {
+    if (!selectedTech) return;
+    setSaving(true);
+    try {
+      await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech));
+      setMsg('Teknisyen atandı, istasyon bakıma alındı ✓');
+      setTechModal(null);
+      setSelectedTech('');
       load();
     } catch (e) { setMsg(e.message); }
     finally { setSaving(false); }
@@ -863,12 +889,56 @@ function IssuesTab() {
                 <option key={val} value={val}>{label}</option>
               ))}
             </select>
+            {edit.status === 'in_progress' && (
+              <p className="text-xs text-yellow-400 bg-yellow-900/20 border border-yellow-800 rounded-lg px-3 py-2">
+                ⚠️ Bir sonraki adımda teknisyen seçmeniz gerekecek ve istasyon otomatik olarak bakıma alınacak.
+              </p>
+            )}
             <div className="flex gap-3">
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-semibold">
-                {saving ? 'Kaydediliyor…' : 'Kaydet'}
+                {saving ? 'Kaydediliyor…' : 'Devam Et →'}
               </button>
               <button onClick={() => setEdit(null)}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm">İptal</button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Teknisyen seçim modalı */}
+      {techModal && (
+        <Modal title="Teknisyen Ata" onClose={() => setTechModal(null)}>
+          <div className="space-y-4">
+            <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
+              <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{techModal.issueTitle}</p>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400">Teknisyen Seç *</label>
+              <select
+                value={selectedTech}
+                onChange={e => setSelectedTech(e.target.value)}
+                className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+              >
+                <option value="">— Teknisyen seçin —</option>
+                {technicians.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-xs text-slate-500">
+              🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAssignTechnician}
+                disabled={saving || !selectedTech}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-lg text-sm font-semibold"
+              >
+                {saving ? 'Atanıyor…' : '🔧 Teknisyen Ata & Bakıma Al'}
+              </button>
+              <button onClick={() => setTechModal(null)}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm">İptal</button>
             </div>
           </div>

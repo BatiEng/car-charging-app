@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
-import { getStations, patchCharger } from '../services/api';
+import { getStations, patchCharger, updateStation } from '../services/api';
 
 const MAP_LIBRARIES = ['places'];
 const MAP_CENTER    = { lat: 38.4237, lng: 27.1428 };
@@ -11,7 +11,13 @@ const MAP_STYLES    = [
   { featureType: 'water',          elementType: 'geometry', stylers: [{ color: '#0e2137' }] },
 ];
 
-const STATUS_COLOR = { available: '#10b981', occupied: '#3b82f6', offline: '#ef4444' };
+const STATUS_COLOR = {
+  available:   '#10b981',
+  occupied:    '#3b82f6',
+  offline:     '#ef4444',
+  overstay:    '#f97316',
+  maintenance: '#f59e0b',
+};
 
 function markerIcon(status) {
   const color = STATUS_COLOR[status] || '#6b7280';
@@ -27,16 +33,30 @@ function markerIcon(status) {
   };
 }
 
+function maintenanceMarkerIcon() {
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">
+        <circle cx="22" cy="22" r="20" fill="#f59e0b" stroke="white" stroke-width="3"/>
+        <text x="22" y="28" text-anchor="middle" font-size="18" fill="white">🏗</text>
+      </svg>`
+    )}`,
+    scaledSize: new window.google.maps.Size(44, 44),
+    anchor:     new window.google.maps.Point(22, 22),
+  };
+}
+
 export default function TechnicianView() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries: MAP_LIBRARIES,
   });
 
-  const [stations, setStations] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [msg, setMsg]           = useState('');
-  const [mapRef, setMapRef]     = useState(null);
+  const [stations,          setStations]         = useState([]);
+  const [selected,          setSelected]         = useState(null);  // selected charger
+  const [selectedStation,   setSelectedStation]  = useState(null);  // selected maintenance station
+  const [msg,               setMsg]              = useState('');
+  const [mapRef,            setMapRef]           = useState(null);
 
   const load = () => getStations().then(setStations).catch(() => {});
   useEffect(() => { load(); }, []);
@@ -56,20 +76,41 @@ export default function TechnicianView() {
     } catch (e) { setMsg(e.message); }
   };
 
+  const handleFixStation = async (stationId) => {
+    try {
+      await updateStation(stationId, { status: 'active' });
+      setMsg('İstasyon aktif olarak işaretlendi ✓');
+      setSelectedStation(null);
+      load();
+    } catch (e) { setMsg(e.message); }
+  };
+
   // All chargers flattened for the map
   const allChargers = stations.flatMap(s =>
-    (s.chargers || []).map(c => ({ ...c, station_name: s.name, station_lat: s.lat, station_lng: s.lng }))
+    (s.chargers || []).map(c => ({ ...c, station_name: s.name, station_lat: s.lat, station_lng: s.lng, station_status: s.status }))
   );
 
-  const offlineCount  = allChargers.filter(c => c.status === 'offline').length;
-  const occupiedCount = allChargers.filter(c => c.status === 'occupied').length;
+  const maintenanceStations = stations.filter(s => s.status === 'maintenance');
+  const offlineCount        = allChargers.filter(c => c.status === 'offline').length;
+  const occupiedCount       = allChargers.filter(c => c.status === 'occupied').length;
+  const overstayCount       = allChargers.filter(c => c.status === 'overstay').length;
 
   return (
     <div className="flex flex-col h-full">
       {/* Header bar */}
       <div className="p-4 sm:p-6 border-b border-slate-700 flex flex-wrap items-center gap-4">
         <h2 className="text-xl font-bold text-white">Teknisyen Görünümü</h2>
-        <div className="flex gap-3 ml-auto">
+        <div className="flex flex-wrap gap-3 ml-auto">
+          {maintenanceStations.length > 0 && (
+            <span className="flex items-center gap-1.5 text-sm text-yellow-400">
+              <span className="w-2 h-2 rounded-full bg-yellow-400" /> {maintenanceStations.length} bakımda
+            </span>
+          )}
+          {overstayCount > 0 && (
+            <span className="flex items-center gap-1.5 text-sm text-orange-400">
+              <span className="w-2 h-2 rounded-full bg-orange-400" /> {overstayCount} overstay
+            </span>
+          )}
           <span className="flex items-center gap-1.5 text-sm text-red-400">
             <span className="w-2 h-2 rounded-full bg-red-400" /> {offlineCount} çevrimdışı
           </span>
@@ -77,7 +118,7 @@ export default function TechnicianView() {
             <span className="w-2 h-2 rounded-full bg-blue-400" /> {occupiedCount} dolu
           </span>
           <span className="flex items-center gap-1.5 text-sm text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" /> {allChargers.length - offlineCount - occupiedCount} müsait
+            <span className="w-2 h-2 rounded-full bg-emerald-400" /> {allChargers.filter(c => c.status === 'available').length} müsait
           </span>
         </div>
       </div>
@@ -98,39 +139,73 @@ export default function TechnicianView() {
             onLoad={onMapLoad}
             options={{ styles: MAP_STYLES, disableDefaultUI: false, zoomControl: true }}
           >
+            {/* Charger markers */}
             {allChargers.map(ch => (
               <MarkerF
-                key={ch.id}
+                key={`ch-${ch.id}`}
                 position={{ lat: parseFloat(ch.station_lat), lng: parseFloat(ch.station_lng) }}
                 icon={markerIcon(ch.status)}
                 title={`${ch.charger_code} – ${ch.status}`}
-                onClick={() => setSelected(ch)}
+                onClick={() => { setSelected(ch); setSelectedStation(null); }}
               />
             ))}
 
+            {/* Maintenance station markers (larger, yellow) */}
+            {maintenanceStations.map(s => (
+              <MarkerF
+                key={`st-${s.id}`}
+                position={{ lat: parseFloat(s.lat), lng: parseFloat(s.lng) }}
+                icon={maintenanceMarkerIcon()}
+                title={`${s.name} – BAKIM`}
+                onClick={() => { setSelectedStation(s); setSelected(null); }}
+                zIndex={10}
+              />
+            ))}
+
+            {/* Charger info window */}
             {selected && (
               <InfoWindowF
                 position={{ lat: parseFloat(selected.station_lat), lng: parseFloat(selected.station_lng) }}
                 onCloseClick={() => setSelected(null)}
               >
-                <div className="bg-slate-900 text-white rounded-lg p-3 min-w-[180px]">
-                  <p className="font-semibold">{selected.station_name}</p>
-                  <p className="text-sm font-mono mt-1">{selected.charger_code}</p>
-                  <p className="text-sm mt-0.5 capitalize">
-                    Durum: <span className={
-                      selected.status === 'available' ? 'text-emerald-400' :
-                      selected.status === 'offline'   ? 'text-red-400' : 'text-blue-400'
-                    }>{selected.status}</span>
+                <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 180 }}>
+                  <p style={{ fontWeight: 600 }}>{selected.station_name}</p>
+                  <p style={{ fontSize: 12, fontFamily: 'monospace', marginTop: 4 }}>{selected.charger_code}</p>
+                  <p style={{ fontSize: 12, marginTop: 2 }}>
+                    Durum: <span style={{ color: STATUS_COLOR[selected.status] || '#9ca3af' }}>{selected.status}</span>
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{selected.type} · {selected.power} kW · {selected.connector_type}</p>
+                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selected.type} · {selected.power} kW · {selected.connector_type}</p>
                   {selected.status !== 'available' && (
                     <button
                       onClick={() => handleFixCharger(selected.id, selected.status)}
-                      className="mt-2 w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 rounded-lg"
+                      style={{ marginTop: 8, width: '100%', background: '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}
                     >
                       Onarıldı – Müsait İşaretle
                     </button>
                   )}
+                </div>
+              </InfoWindowF>
+            )}
+
+            {/* Maintenance station info window */}
+            {selectedStation && (
+              <InfoWindowF
+                position={{ lat: parseFloat(selectedStation.lat), lng: parseFloat(selectedStation.lng) }}
+                onCloseClick={() => setSelectedStation(null)}
+              >
+                <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 200 }}>
+                  <p style={{ fontWeight: 600 }}>{selectedStation.name}</p>
+                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selectedStation.address}</p>
+                  <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}>🏗 Bakımda</p>
+                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                    {(selectedStation.chargers || []).length} şarjcı
+                  </p>
+                  <button
+                    onClick={() => handleFixStation(selectedStation.id)}
+                    style={{ marginTop: 8, width: '100%', background: '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}
+                  >
+                    Bakım Bitti – Aktif Yap
+                  </button>
                 </div>
               </InfoWindowF>
             )}
@@ -142,21 +217,69 @@ export default function TechnicianView() {
         )}
       </div>
 
-      {/* Offline charger list */}
-      {offlineCount > 0 && (
-        <div className="p-4 border-t border-slate-700">
-          <h4 className="text-sm font-semibold text-red-400 mb-2">Çevrimdışı Şarjcılar</h4>
-          <div className="flex flex-wrap gap-2">
-            {allChargers.filter(c => c.status === 'offline').map(c => (
-              <button
-                key={c.id}
-                onClick={() => { setSelected(c); mapRef?.panTo({ lat: parseFloat(c.station_lat), lng: parseFloat(c.station_lng) }); }}
-                className="bg-red-900/40 border border-red-700 text-red-300 text-xs px-3 py-1.5 rounded-lg hover:bg-red-900/60"
-              >
-                {c.charger_code} · {c.station_name}
-              </button>
-            ))}
-          </div>
+      {/* Bottom lists */}
+      {(maintenanceStations.length > 0 || offlineCount > 0 || overstayCount > 0) && (
+        <div className="border-t border-slate-700 divide-y divide-slate-700/60">
+
+          {/* Maintenance stations */}
+          {maintenanceStations.length > 0 && (
+            <div className="p-4">
+              <h4 className="text-sm font-semibold text-yellow-400 mb-2">🏗 Bakımdaki İstasyonlar</h4>
+              <div className="flex flex-wrap gap-2">
+                {maintenanceStations.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      setSelectedStation(s);
+                      setSelected(null);
+                      mapRef?.panTo({ lat: parseFloat(s.lat), lng: parseFloat(s.lng) });
+                      mapRef?.setZoom(15);
+                    }}
+                    className="bg-yellow-900/30 border border-yellow-700 text-yellow-300 text-xs px-3 py-1.5 rounded-lg hover:bg-yellow-900/50 transition-colors"
+                  >
+                    🏗 {s.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overstay chargers */}
+          {overstayCount > 0 && (
+            <div className="p-4">
+              <h4 className="text-sm font-semibold text-orange-400 mb-2">⚠️ Overstay Şarjcılar</h4>
+              <div className="flex flex-wrap gap-2">
+                {allChargers.filter(c => c.status === 'overstay').map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelected(c); setSelectedStation(null); mapRef?.panTo({ lat: parseFloat(c.station_lat), lng: parseFloat(c.station_lng) }); }}
+                    className="bg-orange-900/30 border border-orange-700 text-orange-300 text-xs px-3 py-1.5 rounded-lg hover:bg-orange-900/50 transition-colors"
+                  >
+                    {c.charger_code} · {c.station_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Offline chargers */}
+          {offlineCount > 0 && (
+            <div className="p-4">
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Çevrimdışı Şarjcılar</h4>
+              <div className="flex flex-wrap gap-2">
+                {allChargers.filter(c => c.status === 'offline').map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => { setSelected(c); setSelectedStation(null); mapRef?.panTo({ lat: parseFloat(c.station_lat), lng: parseFloat(c.station_lng) }); }}
+                    className="bg-red-900/40 border border-red-700 text-red-300 text-xs px-3 py-1.5 rounded-lg hover:bg-red-900/60 transition-colors"
+                  >
+                    {c.charger_code} · {c.station_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       )}
     </div>
