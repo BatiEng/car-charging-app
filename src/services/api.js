@@ -107,8 +107,17 @@ export const getSessions = () => request('charging_sessions.php');
 export const startSession = (reservation_id, vehicle_pin) =>
   request('charging_sessions.php', { method: 'POST', body: JSON.stringify({ reservation_id, vehicle_pin }) });
 
-export const endSession = (id, kwh_consumed) =>
-  request(`charging_sessions.php?id=${id}`, { method: 'PUT', body: JSON.stringify({ kwh_consumed }) });
+export const endSession = (id, kwh_consumed, overstay_minutes = 0) =>
+  request(`charging_sessions.php?id=${id}`, { method: 'PUT', body: JSON.stringify({ kwh_consumed, overstay_minutes }) });
+
+export const markSessionOverstay = (session_id) =>
+  request(`charging_sessions.php?action=mark_overstay&id=${session_id}`, { method: 'PATCH' });
+
+export const checkExtension = (session_id) =>
+  request(`charging_sessions.php?action=check_extension&session_id=${session_id}`);
+
+export const extendSession = (session_id) =>
+  request('charging_sessions.php?action=extend', { method: 'POST', body: JSON.stringify({ session_id }) });
 
 // ── Notifications ─────────────────────────────────────────────
 export const getNotifications = () => request('notifications.php');
@@ -140,6 +149,11 @@ export const getStationUsage = () => request('admin.php?type=station_usage');
 export const reportIssue  = (data)          => request('issues.php', { method: 'POST', body: JSON.stringify(data) });
 export const getMyIssues  = ()              => request('issues.php');
 export const patchIssue   = (id, status)    => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+
+// ── Waiting Queue ─────────────────────────────────────────────
+export const getMyQueue  = ()                              => request('queue.php');
+export const joinQueue   = (station_id, connector_type)   => request('queue.php', { method: 'POST', body: JSON.stringify({ station_id, connector_type }) });
+export const leaveQueue  = (station_id)                   => request(`queue.php?station_id=${station_id}`, { method: 'DELETE' });
 
 // ── Kullanıcı kendi hesabını sil ─────────────────────────────
 export const deleteMyAccount = () =>

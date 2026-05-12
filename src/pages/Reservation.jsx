@@ -31,25 +31,32 @@ export default function Reservation({
     getReservations()
       .then(rows => {
         const ranges = rows
-          .filter(r => r.charger_id == charger.id && r.reservation_date === date && ['pending','active'].includes(r.status))
+          .filter(r => r.charger_id == charger.id && r.reservation_date === date && ['pending','active','completed'].includes(r.status))
           .map(r => ({ start: r.start_time.slice(0, 5), end: r.end_time.slice(0, 5) }));
         setTakenRanges(ranges);
       })
       .catch(() => {});
   }, [charger, date, selectedStation]);
 
+  // "HH:MM" stringini dakikaya çevirir
+  const toMinutes = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+
   // Bir slotun mevcut rezervasyonlarla çakışıp çakışmadığını kontrol et
-  const isSlotTaken = (startHour, dur) => {
-    const slotStart = startHour * 60;
+  const isSlotTaken = (startTime, dur) => {
+    const slotStart = toMinutes(startTime);
     const slotEnd   = slotStart + dur * 60;
     return takenRanges.some(({ start, end }) => {
-      const [sh, sm] = start.split(':').map(Number);
-      const [eh, em] = end.split(':').map(Number);
-      const resStart = sh * 60 + sm;
-      const resEnd   = eh * 60 + em;
+      const resStart = toMinutes(start);
+      const resEnd   = toMinutes(end);
       // Çakışma: slot sonu > rezervasyon başı VE slot başı < rezervasyon sonu
       return slotEnd > resStart && slotStart < resEnd;
     });
+  };
+
+  // Dakika cinsinden offset ekleyip "HH:MM" döndürür
+  const addMins = (time, mins) => {
+    const total = toMinutes(time) + mins;
+    return `${pad2(Math.floor(total / 60))}:${pad2(total % 60)}`;
   };
 
 
@@ -90,11 +97,13 @@ export default function Reservation({
 
   const getSlots = () => {
     const out = [];
-    for (let h = 8; h <= 21; h++) {
-      if (h + duration > 22) continue;
-      const t = `${pad2(h)}:00`;
-      const taken = isSlotTaken(h, duration);
-      out.push({ time: t, endTime: `${pad2(h + duration)}:00`, taken });
+    for (let m = 8 * 60; m <= 21 * 60; m += 30) {
+      const endM = m + duration * 60;
+      if (endM > 22 * 60) continue; // 22:00'den sonraya taşan slotları atla
+      const time    = `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
+      const endTime = `${pad2(Math.floor(endM / 60))}:${pad2(endM % 60)}`;
+      const taken   = isSlotTaken(time, duration);
+      out.push({ time, endTime, taken });
     }
     return out;
   };
@@ -148,7 +157,7 @@ export default function Reservation({
               ['Konektör',    resData.connector_type, '✓ Uyumlu'],
               ['Araç',        `${selectedVehicle.brand} ${selectedVehicle.model} (${selectedVehicle.plate})`],
               ['Tarih',       resData.reservation_date || date],
-              ['Saat',        `${resData.start_time?.slice(0,5) || slot} – ${resData.end_time?.slice(0,5) || ''} (${duration}s)`],
+              ['Saat',        `${resData.start_time?.slice(0,5) || slot} – ${resData.end_time?.slice(0,5) || (slot ? addMins(slot, duration * 60) : '')} (${duration}s)`],
             ].map(([k, v, suffix]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-slate-400">{k}</span>
@@ -378,7 +387,7 @@ export default function Reservation({
             {[
               ['Şarjcı',         `${charger.charger_code} · ${charger.type} ${charger.power}kW`],
               ['Tarih',          date],
-              ['Saat Slotu',     `${slot} – ${pad2((+slot.split(':')[0]) + duration)}:00`],
+              ['Saat Slotu',     `${slot} – ${addMins(slot, duration * 60)}`],
               ['Süre',           `${duration} saat`],
               ['Max Enerji',     `${charger.power * duration} kWh`],
             ].map(([k, v]) => (

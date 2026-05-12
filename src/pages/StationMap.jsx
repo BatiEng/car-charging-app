@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { GoogleMap, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { MAP_CENTER } from '../data/stations';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, STATUS_BADGE } from '../utils/helpers';
-import { getStations, getMyTopStation, getMyFavorites, addFavorite, removeFavorite, reportIssue } from '../services/api';
+import { getStations, getMyTopStation, getMyFavorites, addFavorite, removeFavorite, reportIssue, getMyQueue, joinQueue, leaveQueue } from '../services/api';
 
 const MAP_STYLE   = { width: '100%', height: '100%' };
 const MAP_OPTIONS = {
@@ -182,6 +182,10 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
   // Sorun bildirme
   const [issueStation, setIssueStation] = useState(null);
 
+  // Bekleme kuyruğu
+  const [myQueueEntries, setMyQueueEntries] = useState([]);
+  const [queueLoading,   setQueueLoading]   = useState(false);
+
   // ── Konum izni ───────────────────────────────────────────────
   useEffect(() => {
     if (!navigator.geolocation) { setLocReady(true); return; }
@@ -238,6 +242,38 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
       }
     } catch {}
     finally { setFavLoading(null); }
+  };
+
+  // ── Bekleme Kuyruğu ─────────────────────────────────────────
+  const loadQueue = () => {
+    if (user?.role === 'driver') {
+      getMyQueue().then(rows => setMyQueueEntries(rows)).catch(() => {});
+    }
+  };
+  useEffect(() => { loadQueue(); }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleJoinQueue = async (stationId, connectorType) => {
+    setQueueLoading(true);
+    try {
+      await joinQueue(stationId, connectorType);
+      await loadQueue();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setQueueLoading(false);
+    }
+  };
+
+  const handleLeaveQueue = async (stationId) => {
+    setQueueLoading(true);
+    try {
+      await leaveQueue(stationId);
+      await loadQueue();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setQueueLoading(false);
+    }
   };
 
   // ── Yakın istasyon yoksa öner ────────────────────────────────
@@ -647,6 +683,49 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                   {selectedVehicle ? 'Rezervasyon Yap →' : '⚠️ Önce araç seçin'}
                 </button>
               )}
+
+              {/* Kuyruğa Katıl — uyumlu şarjcı var ama hepsi dolu ise */}
+              {!readOnly && user?.role === 'driver' && selectedVehicle && (() => {
+                const connType    = selectedVehicle.connector_type || selectedVehicle.connector;
+                const compatible  = (selectedStation.chargers || []).filter(c => c.connector_type === connType);
+                const hasAvail    = compatible.some(c => c.status === 'available');
+                const hasOccupied = compatible.some(c => ['occupied', 'overstay'].includes(c.status));
+                if (compatible.length === 0 || hasAvail || !hasOccupied) return null;
+
+                const myEntry = myQueueEntries.find(e => String(e.station_id) === String(selectedStation.id));
+                if (myEntry) {
+                  return (
+                    <div className="mt-2 bg-blue-900/30 border border-blue-700 rounded-xl p-3 flex items-center justify-between gap-2">
+                      <div>
+                        {myEntry.status === 'notified' ? (
+                          <>
+                            <p className="text-blue-200 text-xs font-semibold">🔔 Sıranız Geldi!</p>
+                            <p className="text-blue-300 text-xs mt-0.5">30 dk içinde rezervasyon yapın!</p>
+                          </>
+                        ) : (
+                          <p className="text-blue-300 text-xs font-semibold">🕐 Kuyruktasınız — {myEntry.position}. sıra</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleLeaveQueue(selectedStation.id)}
+                        disabled={queueLoading}
+                        className="text-xs text-red-400 hover:text-red-300 shrink-0 transition-colors disabled:opacity-40"
+                      >
+                        Çık
+                      </button>
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => handleJoinQueue(selectedStation.id, connType)}
+                    disabled={queueLoading}
+                    className="w-full mt-2 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700 text-blue-300 text-sm font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    🔔 Kuyruğa Katıl
+                  </button>
+                );
+              })()}
 
               {/* Sorun Bildir butonu — giriş yapmış herkes görebilir */}
               {user && (

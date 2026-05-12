@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getReservations, cancelReservation } from '../services/api';
+import { getReservations, cancelReservation, getMyQueue, leaveQueue } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const STATUS_STYLE = {
@@ -11,11 +11,13 @@ const STATUS_STYLE = {
 
 export default function MyReservations({ setView }) {
   const { refreshUser } = useAuth();
-  const [reservations, setReservations] = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [cancelling,   setCancelling]   = useState(null); // id being cancelled
-  const [msg,          setMsg]          = useState('');
-  const [error,        setError]        = useState('');
+  const [reservations,  setReservations]  = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [cancelling,    setCancelling]    = useState(null);
+  const [msg,           setMsg]           = useState('');
+  const [error,         setError]         = useState('');
+  const [queueEntries,  setQueueEntries]  = useState([]);
+  const [queueLeaving,  setQueueLeaving]  = useState(null); // station_id being left
 
   const load = () => {
     setLoading(true);
@@ -23,6 +25,9 @@ export default function MyReservations({ setView }) {
       .then(rows => setReservations(rows))
       .catch(() => {})
       .finally(() => setLoading(false));
+    getMyQueue()
+      .then(rows => setQueueEntries(rows))
+      .catch(() => {});
   };
 
   useEffect(() => { load(); }, []);
@@ -39,6 +44,19 @@ export default function MyReservations({ setView }) {
       setError(err.message);
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleLeaveQueue = async (stationId) => {
+    if (!confirm('Kuyruktan çıkmak istediğinizden emin misiniz?')) return;
+    setQueueLeaving(stationId);
+    try {
+      await leaveQueue(stationId);
+      setQueueEntries(prev => prev.filter(e => String(e.station_id) !== String(stationId)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setQueueLeaving(null);
     }
   };
 
@@ -68,6 +86,38 @@ export default function MyReservations({ setView }) {
       )}
       {error && (
         <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">{error}</div>
+      )}
+
+      {/* ── Bekleme Kuyruğum ── */}
+      {queueEntries.length > 0 && (
+        <div className="bg-slate-800 rounded-2xl border border-blue-800 p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-blue-300 mb-3">🔔 Bekleme Kuyruğum ({queueEntries.length})</h3>
+          <div className="space-y-2">
+            {queueEntries.map(entry => (
+              <div key={entry.id} className="flex items-center justify-between gap-3 bg-blue-900/20 border border-blue-800 rounded-xl px-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white truncate">{entry.station_name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{entry.station_address}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-xs text-slate-400">🔌 {entry.connector_type}</span>
+                    {entry.status === 'notified' ? (
+                      <span className="text-xs font-semibold text-blue-200 animate-pulse">🔔 Sıranız Geldi! 30 dk içinde rezervasyon yapın</span>
+                    ) : (
+                      <span className="text-xs text-blue-300">{entry.position}. sıra</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleLeaveQueue(entry.station_id)}
+                  disabled={queueLeaving === entry.station_id}
+                  className="shrink-0 text-xs text-red-400 hover:text-red-300 border border-red-800 hover:border-red-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                >
+                  {queueLeaving === entry.station_id ? '…' : 'Çık'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {loading ? (
