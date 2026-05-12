@@ -42,6 +42,13 @@ export default function MyReservations({ setView }) {
     }
   };
 
+  // Rezervasyona 3 saatten az kaldı mı?
+  const isWithin3Hours = (r) => {
+    const resTime = new Date(`${r.reservation_date}T${r.start_time}`);
+    const diffMs  = resTime - new Date();
+    return diffMs < 3 * 60 * 60 * 1000; // 3 saat = 10800000 ms
+  };
+
   const grouped = {
     active:    reservations.filter(r => r.status === 'active'),
     pending:   reservations.filter(r => r.status === 'pending'),
@@ -112,15 +119,26 @@ export default function MyReservations({ setView }) {
                       </div>
 
                       {/* Actions */}
-                      {(status === 'pending') && (
-                        <button
-                          onClick={() => handleCancel(r.id)}
-                          disabled={cancelling === r.id}
-                          className="shrink-0 bg-red-900/50 hover:bg-red-800 border border-red-700 text-red-300 text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {cancelling === r.id ? '…' : 'İptal Et'}
-                        </button>
-                      )}
+                      {(status === 'pending') && (() => {
+                        const tooLate = isWithin3Hours(r);
+                        return (
+                          <div className="shrink-0 flex flex-col items-end gap-1">
+                            <button
+                              onClick={() => handleCancel(r.id)}
+                              disabled={cancelling === r.id || tooLate}
+                              title={tooLate ? 'Başlangıca 3 saatten az kaldı, iptal edilemez' : ''}
+                              className="bg-red-900/50 hover:bg-red-800 border border-red-700 text-red-300 text-xs font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {cancelling === r.id ? '…' : 'İptal Et'}
+                            </button>
+                            {tooLate && (
+                              <span className="text-[10px] text-yellow-500 text-right max-w-[100px]">
+                                ⏳ 3 saatten az kaldı
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {status === 'active' && (
                         <button
                           onClick={() => setView('session')}

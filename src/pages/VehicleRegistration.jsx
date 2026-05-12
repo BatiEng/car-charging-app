@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { BRANDS, CONNECTORS } from '../data/stations';
-import { getVehicles, addVehicle, updateVehicle, deleteVehicle } from '../services/api';
+import { getVehicles, addVehicle, updateVehicle, deleteVehicle, deleteMyAccount } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const EMPTY = { brand: '', model: '', battery_kwh: '', connector_type: '', plate: '' };
 
@@ -20,11 +21,14 @@ export default function VehicleRegistration({
   selectedVehicle, setSelectedVehicle,
   setView,
 }) {
+  const { logout } = useAuth();
   const [form,    setForm]    = useState(EMPTY);
   const [errors,  setErrors]  = useState({});
   const [loading, setLoading] = useState(false);
   const [msg,     setMsg]     = useState('');
   const [error,   setError]   = useState('');
+  const [deletingAccount,    setDeletingAccount]    = useState(false);
+  const [showDeleteConfirm,  setShowDeleteConfirm]  = useState(false);
 
   // Edit modal state
   const [editVehicle, setEditVehicle] = useState(null); // vehicle being edited
@@ -74,6 +78,18 @@ export default function VehicleRegistration({
       setVehicles(updated);
       if (selectedVehicle?.id === id) setSelectedVehicle(null);
     } catch (err) { setError(err.message); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    setShowDeleteConfirm(false);
+    try {
+      await deleteMyAccount();
+      await logout();
+    } catch (err) {
+      setError(err.message);
+      setDeletingAccount(false);
+    }
   };
 
   const openEdit = (v, e) => {
@@ -169,9 +185,49 @@ export default function VehicleRegistration({
     document.body
   );
 
+  // ── Hesap Silme Onay Modal ──
+  const deleteConfirmModal = showDeleteConfirm && createPortal(
+    <div
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}
+    >
+      <div className="bg-slate-800 border border-red-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+          <h3 className="font-semibold text-red-400 flex items-center gap-2">
+            🗑️ Hesabı Sil
+          </h3>
+          <button onClick={() => setShowDeleteConfirm(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="bg-red-900/30 border border-red-800 rounded-xl p-4 text-sm text-red-300 space-y-1">
+            <p className="font-semibold">Bu işlem geri alınamaz!</p>
+            <p className="text-red-400/80">Tüm araçlarınız, rezervasyonlarınız ve hesap bilgileriniz kalıcı olarak silinecek.</p>
+          </div>
+          <p className="text-slate-300 text-sm">Hesabınızı silmek istediğinizden emin misiniz?</p>
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={handleDeleteAccount}
+              className="flex-1 bg-red-700 hover:bg-red-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              Evet, Hesabımı Sil
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              Vazgeç
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
     <div className="p-4 sm:p-8 max-w-5xl mx-auto">
       {editModal}
+      {deleteConfirmModal}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Araçlarım</h1>
         <p className="text-slate-400 mt-1 text-sm">Araçlarınızı kaydedin, uyumluluk kontrolü ve rezervasyon yapabilin</p>
@@ -232,7 +288,7 @@ export default function VehicleRegistration({
           ) : (
             <div className="space-y-3">
               {vehicles.map((v) => (
-                <div key={v.id} onClick={() => setSelectedVehicle(v)}
+                <div key={v.id} onClick={() => setSelectedVehicle(selectedVehicle?.id === v.id ? null : v)}
                   className={`bg-slate-800 rounded-2xl border-2 p-5 cursor-pointer transition-all ${
                     selectedVehicle?.id === v.id
                       ? 'border-emerald-500 shadow-md shadow-emerald-900/30'
@@ -269,13 +325,41 @@ export default function VehicleRegistration({
               ))}
 
               {selectedVehicle && (
-                <button onClick={() => setView('map')}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-colors text-sm mt-1">
-                  Şarj İstasyonu Bul →
-                </button>
+                <div className="mt-1 space-y-2">
+                  <div className="bg-emerald-900/30 border border-emerald-800 rounded-xl px-4 py-2.5 text-xs text-emerald-300 flex items-center gap-2">
+                    <span>✓ Seçili:</span>
+                    <span className="font-semibold">{selectedVehicle.brand} {selectedVehicle.model}</span>
+                    <span className="ml-auto bg-emerald-800/60 px-2 py-0.5 rounded-full font-mono">
+                      🔌 {selectedVehicle.connector_type}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setView('map')}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
+                  >
+                    Şarj İstasyonu Bul →
+                  </button>
+                </div>
               )}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── Hesap Silme ── */}
+      <div className="mt-10 pt-6 border-t border-slate-700/60">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-red-400">Tehlikeli Bölge</p>
+            <p className="text-xs text-slate-500 mt-0.5">Hesabınızı kalıcı olarak silin. Bu işlem geri alınamaz.</p>
+          </div>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={deletingAccount}
+            className="shrink-0 bg-red-900/40 hover:bg-red-800/60 border border-red-700 text-red-400 text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+          >
+            {deletingAccount ? 'Siliniyor…' : '🗑️ Hesabımı Sil'}
+          </button>
         </div>
       </div>
     </div>

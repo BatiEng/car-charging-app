@@ -27,6 +27,10 @@ function AppInner() {
   /* ── Global state ── */
   const [view, setView] = useState(() => {
     try { if (localStorage.getItem('ev_active_session')) return 'session'; } catch {}
+    try {
+      const saved = localStorage.getItem('ev_view');
+      if (saved) return saved;
+    } catch {}
     if (!user) return 'login';
     if (user.role === 'admin')      return 'admin-users';
     if (user.role === 'operator')   return 'operator';
@@ -47,9 +51,10 @@ function AppInner() {
       setSelectedVehicle(null);
       setSelectedStation(null);
       setReservation(null);
+      try { localStorage.removeItem('ev_view'); } catch {}
       return;
     }
-    const adminViews    = ['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-map'];
+    const adminViews    = ['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-vehicles','admin-issues','admin-map'];
     const operatorViews = ['operator','operator-map'];
     const techViews     = ['technician'];
     const driverViews   = ['vehicles','map','reservation','myreservations','session','wallet'];
@@ -69,6 +74,11 @@ function AppInner() {
     if (s) localStorage.setItem('ev_active_session', JSON.stringify(s));
     else   localStorage.removeItem('ev_active_session');
   };
+
+  // view değişince localStorage'a kaydet
+  useEffect(() => {
+    try { localStorage.setItem('ev_view', view); } catch {}
+  }, [view]);
 
   // If auth state changes (login/logout), redirect to the right default view
   const handleSetView = (v) => setView(v);
@@ -140,7 +150,7 @@ function AppInner() {
         {view === 'myreservations' && <MyReservations setView={handleSetView} />}
 
         {/* ── Admin views — her sekme ayrı sayfa ── */}
-        {['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue'].includes(view) && (
+        {['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-vehicles','admin-issues'].includes(view) && (
           <AdminDashboard tab={view.replace('admin-','')} isLoaded={isLoaded} />
         )}
         {view === 'admin-map' && (

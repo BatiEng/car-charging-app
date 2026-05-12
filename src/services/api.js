@@ -47,7 +47,11 @@ export const logout = () => {
 export const me = () => request('auth.php?action=me');
 
 // ── Stations ──────────────────────────────────────────────────
-export const getStations = () => request('stations.php');
+export const getStations      = ()           => request('stations.php');
+export const getMyTopStation  = ()           => request('stations.php?action=my_top');
+export const getMyFavorites   = ()           => request('stations.php?action=my_favorites');
+export const addFavorite      = (station_id) => request('stations.php?action=favorite', { method: 'POST', body: JSON.stringify({ station_id }) });
+export const removeFavorite   = (station_id) => request(`stations.php?action=favorite&station_id=${station_id}`, { method: 'DELETE' });
 
 export const createStation = (data) =>
   request('stations.php', { method: 'POST', body: JSON.stringify(data) });
@@ -126,3 +130,17 @@ export const adminUpdateStation = (data) =>
 
 export const adminUpdateReservation = (data) =>
   request('admin.php', { method: 'PUT', body: JSON.stringify({ ...data, entity: 'reservation' }) });
+
+export const adminDeleteUser = (id) =>
+  request(`admin.php?id=${id}`, { method: 'DELETE' });
+
+export const getStationUsage = () => request('admin.php?type=station_usage');
+
+// ── Station Issues ────────────────────────────────────────────
+export const reportIssue  = (data)          => request('issues.php', { method: 'POST', body: JSON.stringify(data) });
+export const getMyIssues  = ()              => request('issues.php');
+export const patchIssue   = (id, status)    => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+
+// ── Kullanıcı kendi hesabını sil ─────────────────────────────
+export const deleteMyAccount = () =>
+  request('auth.php?action=delete', { method: 'DELETE' });

@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleMap, MarkerF, InfoWindowF, DirectionsRenderer } from '@react-google-maps/api';
+import { createPortal } from 'react-dom';
+import { GoogleMap, MarkerF, InfoWindowF } from '@react-google-maps/api';
 import { MAP_CENTER } from '../data/stations';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, STATUS_BADGE } from '../utils/helpers';
-import { getStations } from '../services/api';
+import { getStations, getMyTopStation, getMyFavorites, addFavorite, removeFavorite, reportIssue } from '../services/api';
 
 const MAP_STYLE   = { width: '100%', height: '100%' };
 const MAP_OPTIONS = {
@@ -20,6 +21,125 @@ function getStationStatus(station) {
   if (station.chargers.some(c => c.status === 'available')) return 'available';
   if (station.chargers.every(c => c.status === 'offline'))  return 'offline';
   return 'occupied';
+}
+
+// ── Sorun Bildirme Modal'ı ────────────────────────────────────
+function IssueModal({ station, onClose }) {
+  const [form,    setForm]    = useState({ title: '', description: '', charger_id: '' });
+  const [saving,  setSaving]  = useState(false);
+  const [err,     setErr]     = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const chargers = station.chargers || [];
+
+  const handleSubmit = async () => {
+    if (!form.title.trim())       { setErr('Başlık gerekli'); return; }
+    if (!form.description.trim()) { setErr('Açıklama gerekli'); return; }
+    setSaving(true); setErr('');
+    try {
+      await reportIssue({
+        station_id:  station.id,
+        charger_id:  form.charger_id || undefined,
+        title:       form.title.trim(),
+        description: form.description.trim(),
+      });
+      setSuccess(true);
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+          <div>
+            <h3 className="font-semibold text-white">⚠️ Sorun Bildir</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{station.name}</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+        </div>
+
+        <div className="p-5">
+          {success ? (
+            <div className="text-center py-6">
+              <div className="text-5xl mb-3">✅</div>
+              <p className="text-white font-semibold">Bildiriminiz alındı</p>
+              <p className="text-slate-400 text-sm mt-1">İstasyon operatörüne iletildi, en kısa sürede incelenecek.</p>
+              <button
+                onClick={onClose}
+                className="mt-5 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl text-sm font-semibold"
+              >Kapat</button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Şarjcı seç (opsiyonel) */}
+              {chargers.length > 0 && (
+                <div>
+                  <label className="text-xs text-slate-400">Şarj Ünitesi (opsiyonel)</label>
+                  <select
+                    value={form.charger_id}
+                    onChange={e => setForm(f => ({ ...f, charger_id: e.target.value }))}
+                    className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                  >
+                    <option value="">— Genel istasyon sorunu —</option>
+                    {chargers.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.charger_code ? `${c.charger_code} · ` : ''}{c.type} {c.power}kW · {c.connector_type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Başlık */}
+              <div>
+                <label className="text-xs text-slate-400">Başlık *</label>
+                <input
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  maxLength={120}
+                  placeholder="örn. Şarjcı bağlantı vermiyor"
+                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm placeholder-slate-500"
+                />
+              </div>
+
+              {/* Açıklama */}
+              <div>
+                <label className="text-xs text-slate-400">Açıklama *</label>
+                <textarea
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  rows={4}
+                  placeholder="Sorunu detaylı açıklayın…"
+                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm resize-none placeholder-slate-500"
+                />
+              </div>
+
+              {err && <p className="text-red-400 text-sm">{err}</p>}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="flex-1 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold"
+                >
+                  {saving ? 'Gönderiliyor…' : '📤 Bildirimi Gönder'}
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm"
+                >İptal</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 /** Haversine mesafesi (km) */
@@ -41,8 +161,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
   );
   const [filterPow,    setFilterPow]    = useState('all');
   const [infoStation,  setInfoStation]  = useState(null);
-  const [directions,   setDirections]   = useState(null);
-  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeInfo,    setRouteInfo]    = useState(null); // { distance, duration, stationName }
 
   // Kullanıcı konumu (varsayılan: İzmir merkezi)
   const [userLocation, setUserLocation] = useState(MAP_CENTER);
@@ -51,6 +170,17 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
   // Yakın istasyon yoksa öneri banner'ı
   const [nearbyPrompt, setNearbyPrompt]         = useState(null); // { station, dist }
   const [promptDismissed, setPromptDismissed]   = useState(false);
+
+  // En çok kullanılan istasyon
+  const [topStation, setTopStation] = useState(null);
+
+  // Favoriler
+  const [favoriteIds,    setFavoriteIds]    = useState(new Set());
+  const [favLoading,     setFavLoading]     = useState(null); // station_id yükleniyor
+  const [showFavOnly,    setShowFavOnly]    = useState(false);
+
+  // Sorun bildirme
+  const [issueStation, setIssueStation] = useState(null);
 
   // ── Konum izni ───────────────────────────────────────────────
   useEffect(() => {
@@ -76,6 +206,39 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  // ── En çok kullanılan istasyon (sadece driver) ───────────────
+  useEffect(() => {
+    if (user?.role === 'driver') {
+      getMyTopStation().then(setTopStation).catch(() => {});
+    }
+  }, [user]);
+
+  // ── Favoriler (sadece driver) ────────────────────────────────
+  const loadFavorites = () => {
+    if (user?.role === 'driver') {
+      getMyFavorites()
+        .then(rows => setFavoriteIds(new Set(rows.map(r => r.id))))
+        .catch(() => {});
+    }
+  };
+  useEffect(() => { loadFavorites(); }, [user]);
+
+  const handleToggleFavorite = async (e, stationId) => {
+    e.stopPropagation();
+    if (favLoading === stationId) return;
+    setFavLoading(stationId);
+    try {
+      if (favoriteIds.has(stationId)) {
+        await removeFavorite(stationId);
+        setFavoriteIds(prev => { const s = new Set(prev); s.delete(stationId); return s; });
+      } else {
+        await addFavorite(stationId);
+        setFavoriteIds(prev => new Set([...prev, stationId]));
+      }
+    } catch {}
+    finally { setFavLoading(null); }
+  };
 
   // ── Yakın istasyon yoksa öner ────────────────────────────────
   useEffect(() => {
@@ -123,38 +286,30 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
       if (filterPow === 'rapid') return c.power >= 150;
       return true;
     });
-    return okConn && okPow;
+    const okFav  = !showFavOnly || favoriteIds.has(s.id);
+    return okConn && okPow && okFav;
   });
 
   const handleMarkerClick = (station) => {
     setInfoStation(station);
     setSelectedStation(station);
-    setDirections(null);
+    setRouteInfo(null);
     mapRef.current?.panTo({ lat: parseFloat(station.lat), lng: parseFloat(station.lng) });
   };
 
-  const handleShowRoute = () => {
-    if (!infoStation) return;
-    setRouteLoading(true);
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin:      userLocation,
-        destination: { lat: parseFloat(infoStation.lat), lng: parseFloat(infoStation.lng) },
-        travelMode:  window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        setRouteLoading(false);
-        if (status === 'OK') { setDirections(result); setInfoStation(null); }
-        else alert('Rota alınamadı: ' + status);
-      }
-    );
+  const handleShowRoute = (station) => {
+    const target = station || infoStation;
+    if (!target) return;
+    const lat = parseFloat(target.lat);
+    const lng = parseFloat(target.lng);
+    // Google Maps'i yeni sekmede yol tarifi moduyla aç
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${lat},${lng}&travelmode=driving`;
+    window.open(url, '_blank');
   };
 
   const handleStationSelect = (station) => {
     setSelectedStation(station);
     setInfoStation(station);
-    setDirections(null);
     mapRef.current?.panTo({ lat: parseFloat(station.lat), lng: parseFloat(station.lng) });
     mapRef.current?.setZoom(14);
   };
@@ -176,6 +331,14 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
 
   return (
     <div className="flex flex-col h-full">
+
+      {/* ── Sorun bildirme modal'ı ── */}
+      {issueStation && (
+        <IssueModal
+          station={issueStation}
+          onClose={() => setIssueStation(null)}
+        />
+      )}
 
       {/* ── Yakın istasyon yoksa banner ── */}
       {nearbyPrompt && !promptDismissed && (
@@ -230,12 +393,19 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           <option value="rapid">DC Süper Hızlı (150 kW)</option>
         </select>
 
-        {directions && (
-          <button onClick={() => setDirections(null)}
-            className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg transition-colors">
-            ✕ Rota
+        {user?.role === 'driver' && (
+          <button
+            onClick={() => setShowFavOnly(v => !v)}
+            className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
+              showFavOnly
+                ? 'bg-pink-700 border-pink-600 text-white'
+                : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            {showFavOnly ? '❤️ Favorilerim' : '🤍 Favorilerim'}
           </button>
         )}
+
 
         <div className="hidden sm:flex ml-auto items-center gap-3 text-xs text-slate-400 flex-wrap">
           {[
@@ -301,38 +471,50 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                 );
               })}
 
-              {infoStation && (
-                <InfoWindowF
-                  position={{ lat: parseFloat(infoStation.lat), lng: parseFloat(infoStation.lng) }}
-                  onCloseClick={() => setInfoStation(null)}
-                >
-                  <div className="text-sm max-w-xs">
-                    <p className="font-bold text-slate-900 mb-0.5">{infoStation.name}</p>
-                    <p className="text-slate-500 text-xs mb-2">{infoStation.address}</p>
-                    <div className="flex gap-3 text-xs text-slate-600 mb-3">
-                      <span>
-                        ⚡ {(infoStation.chargers || []).filter(c => c.status === 'available').length}/
-                        {(infoStation.chargers || []).length} müsait
-                      </span>
+              {infoStation && (() => {
+                const dist = distanceKm(userLocation, {
+                  lat: parseFloat(infoStation.lat),
+                  lng: parseFloat(infoStation.lng),
+                });
+                const estMin = Math.round((dist / 40) * 60); // ~40 km/h ortalama
+                const distLabel = dist < 1
+                  ? `${Math.round(dist * 1000)} m`
+                  : `${dist.toFixed(1)} km`;
+                const timeLabel = estMin < 60
+                  ? `~${estMin} dk`
+                  : `~${Math.floor(estMin/60)}s ${estMin%60}dk`;
+                return (
+                  <InfoWindowF
+                    position={{ lat: parseFloat(infoStation.lat), lng: parseFloat(infoStation.lng) }}
+                    onCloseClick={() => setInfoStation(null)}
+                  >
+                    <div className="text-sm max-w-[200px]">
+                      <p className="font-bold text-slate-900 mb-0.5">{infoStation.name}</p>
+                      <p className="text-slate-500 text-xs mb-2">{infoStation.address}</p>
+                      <div className="flex gap-3 text-xs text-slate-600 mb-2">
+                        <span>⚡ {(infoStation.chargers || []).filter(c => c.status === 'available').length}/{(infoStation.chargers || []).length} müsait</span>
+                      </div>
+                      <div className="flex gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 mb-3 text-blue-700">
+                        <span>📍 {distLabel}</span>
+                        <span>·</span>
+                        <span>🕐 {timeLabel}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleShowRoute(infoStation)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors">
+                          🗺️ Yol Tarifi
+                        </button>
+                        <button
+                          onClick={() => { setSelectedStation(infoStation); setInfoStation(null); }}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors">
+                          Seç
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={handleShowRoute} disabled={routeLoading}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors disabled:opacity-50">
-                        {routeLoading ? '⏳' : '🗺️ Yol'}
-                      </button>
-                      <button
-                        onClick={() => { setSelectedStation(infoStation); setInfoStation(null); }}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-3 rounded-lg transition-colors">
-                        Seç
-                      </button>
-                    </div>
-                  </div>
-                </InfoWindowF>
-              )}
+                  </InfoWindowF>
+                );
+              })()}
 
-              {directions && (
-                <DirectionsRenderer directions={directions} options={{ suppressMarkers: false }} />
-              )}
             </GoogleMap>
           )}
         </div>
@@ -346,6 +528,22 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
             </p>
           </div>
 
+          {/* ── En çok kullanılan istasyon kartı ── */}
+          {topStation && (
+            <div
+              className="mx-3 mt-3 mb-1 bg-purple-900/30 border border-purple-700 rounded-xl px-3 py-2.5 cursor-pointer hover:bg-purple-900/50 transition-colors"
+              onClick={() => {
+                const full = stations.find(s => s.id === topStation.id);
+                if (full) { handleStationSelect(full); }
+              }}
+            >
+              <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide mb-1">⭐ En Çok Kullandığınız İstasyon</p>
+              <p className="text-sm font-semibold text-white">{topStation.name}</p>
+              <p className="text-xs text-slate-400">{topStation.address}</p>
+              <p className="text-xs text-purple-300 mt-1">{topStation.session_count} tamamlanmış şarj</p>
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto">
             {filtered.map((station) => {
               const status = getStationStatus(station);
@@ -357,15 +555,41 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                     active ? 'bg-emerald-900/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-800'
                   }`}
                 >
-                  <div className="flex justify-between items-start">
-                    <p className="font-medium text-sm text-white">{station.name}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[status] || 'bg-slate-700 text-slate-300'}`}>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="font-medium text-sm text-white truncate">{station.name}</p>
+                      {topStation?.id === station.id && (
+                        <span className="shrink-0 text-[10px] bg-purple-900/60 border border-purple-700 text-purple-300 px-1.5 py-0.5 rounded-full">⭐</span>
+                      )}
+                    </div>
+                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[status] || 'bg-slate-700 text-slate-300'}`}>
                       {STATUS_LABEL[status] ?? status}
                     </span>
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">{station.address}</p>
-                  <div className="flex gap-3 mt-2 text-xs text-slate-500">
-                    <span>⚡ {avail}/{(station.chargers || []).length} müsait</span>
+                  <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+                    <div className="flex gap-3">
+                      <span>⚡ {avail}/{(station.chargers || []).length} müsait</span>
+                      <span>📍 {(() => { const d = distanceKm(userLocation, { lat: parseFloat(station.lat), lng: parseFloat(station.lng) }); return d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`; })()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {user?.role === 'driver' && (
+                        <button
+                          onClick={(e) => handleToggleFavorite(e, station.id)}
+                          disabled={favLoading === station.id}
+                          className={`text-base leading-none transition-all ${
+                            favLoading === station.id ? 'opacity-40' : 'hover:scale-125'
+                          }`}
+                          title={favoriteIds.has(station.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
+                        >
+                          {favoriteIds.has(station.id) ? '❤️' : '🤍'}
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleShowRoute(station); }}
+                        className="text-blue-400 hover:text-blue-300 text-[11px] underline"
+                      >Yol Tarifi</button>
+                    </div>
                   </div>
                 </div>
               );
@@ -374,7 +598,21 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
 
           {selectedStation && (
             <div className="border-t border-slate-700 bg-slate-800 p-4 shrink-0">
-              <p className="font-semibold text-white text-sm mb-0.5">{selectedStation.name}</p>
+              <div className="flex items-start justify-between mb-0.5">
+                <p className="font-semibold text-white text-sm">{selectedStation.name}</p>
+                {user?.role === 'driver' && (
+                  <button
+                    onClick={(e) => handleToggleFavorite(e, selectedStation.id)}
+                    disabled={favLoading === selectedStation.id}
+                    className={`text-xl leading-none ml-2 transition-all shrink-0 ${
+                      favLoading === selectedStation.id ? 'opacity-40' : 'hover:scale-125'
+                    }`}
+                    title={favoriteIds.has(selectedStation.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
+                  >
+                    {favoriteIds.has(selectedStation.id) ? '❤️' : '🤍'}
+                  </button>
+                )}
+              </div>
               <p className="text-xs text-slate-400 mb-3">{selectedStation.address}</p>
 
               <div className="space-y-1.5 mb-4">
@@ -407,6 +645,16 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                   className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
                 >
                   {selectedVehicle ? 'Rezervasyon Yap →' : '⚠️ Önce araç seçin'}
+                </button>
+              )}
+
+              {/* Sorun Bildir butonu — giriş yapmış herkes görebilir */}
+              {user && (
+                <button
+                  onClick={() => setIssueStation(selectedStation)}
+                  className="w-full mt-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-orange-400 text-sm font-medium py-2 rounded-xl transition-colors"
+                >
+                  ⚠️ Sorun Bildir
                 </button>
               )}
             </div>

@@ -37,9 +37,34 @@ export default function WalletPage() {
   const load = () => getWallet().then(setWallet).catch(() => {});
   useEffect(() => { load(); }, []);
 
+  // Son kullanma tarihi geçmiş mi kontrolü
+  const isExpiryValid = (expiry) => {
+    const parts = expiry.split('/');
+    if (parts.length !== 2) return false;
+    const month = parseInt(parts[0], 10);
+    const year  = parseInt('20' + parts[1], 10);
+    if (month < 1 || month > 12) return false;
+    const now = new Date();
+    const exp = new Date(year, month - 1, 1);
+    // Ayın son günü de geçerli sayılsın — sadece ayın başı ile kıyasla
+    return exp >= new Date(now.getFullYear(), now.getMonth(), 1);
+  };
+
   const handleTopUp = async (e) => {
     e.preventDefault();
     setError(''); setSuccess('');
+
+    // CVV 3 hane olmalı
+    if (form.cvv.length !== 3) {
+      setError('CVV 3 haneli olmalıdır.');
+      return;
+    }
+    // Son kullanma tarihi kontrolü
+    if (!isExpiryValid(form.expiry)) {
+      setError('Geçersiz veya süresi dolmuş son kullanma tarihi.');
+      return;
+    }
+
     setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 2000)); // fake bank wait
@@ -128,8 +153,8 @@ export default function WalletPage() {
                 type="text"
                 inputMode="numeric"
                 value={form.cvv}
-                onChange={(e) => setForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-                required maxLength={4}
+                onChange={(e) => setForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
+                required maxLength={3}
                 className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
                 placeholder="123"
               />

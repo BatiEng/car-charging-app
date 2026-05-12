@@ -16,6 +16,8 @@ const ADMIN_NAV = [
   { id: 'admin-reservations', label: 'Rezervasyonlar',fullLabel: 'Rezervasyonlar',     icon: '📅' },
   { id: 'admin-sessions',     label: 'Oturumlar',     fullLabel: 'Şarj Oturumları',    icon: '⚡' },
   { id: 'admin-revenue',      label: 'Gelir',         fullLabel: 'Gelir Raporu',       icon: '💰' },
+  { id: 'admin-vehicles',     label: 'Araçlar',       fullLabel: 'Kullanıcı Araçları', icon: '🚗' },
+  { id: 'admin-issues',       label: 'Arızalar',      fullLabel: 'Arızalar & Sorunlar',icon: '⚠️' },
   { id: 'admin-map',          label: 'Harita',        fullLabel: 'İstasyon Haritası',  icon: '🗺️' },
 ];
 

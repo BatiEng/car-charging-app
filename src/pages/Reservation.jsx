@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GoogleMap, DirectionsRenderer, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { USER_LOCATION } from '../data/stations';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, pad2, todayISO, tomorrowISO } from '../utils/helpers';
 import { createReservation, cancelReservation, getReservations } from '../services/api';
@@ -20,38 +20,38 @@ export default function Reservation({
   const [slot,       setSlot]       = useState(null);
   const [confirmed,  setConfirmed]  = useState(false);
   const [resData,    setResData]    = useState(null);
-  const [directions, setDirections] = useState(null);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState('');
 
-  // Existing reservations to check for taken slots
-  const [takenSlots, setTakenSlots] = useState([]);
+  // Existing reservations to check for taken slots — { start, end } formatında sakla
+  const [takenRanges, setTakenRanges] = useState([]);
 
   useEffect(() => {
     if (!selectedStation || !charger) return;
     getReservations()
       .then(rows => {
-        const taken = rows
+        const ranges = rows
           .filter(r => r.charger_id == charger.id && r.reservation_date === date && ['pending','active'].includes(r.status))
-          .map(r => r.start_time.slice(0, 5));
-        setTakenSlots(taken);
+          .map(r => ({ start: r.start_time.slice(0, 5), end: r.end_time.slice(0, 5) }));
+        setTakenRanges(ranges);
       })
       .catch(() => {});
   }, [charger, date, selectedStation]);
 
-  // Load route when confirmed
-  useEffect(() => {
-    if (!isLoaded || !confirmed || !resData) return;
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin:      USER_LOCATION,
-        destination: { lat: parseFloat(resData.lat || resData.station?.lat), lng: parseFloat(resData.lng || resData.station?.lng) },
-        travelMode:  window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => { if (status === 'OK') setDirections(result); }
-    );
-  }, [isLoaded, confirmed, resData]);
+  // Bir slotun mevcut rezervasyonlarla çakışıp çakışmadığını kontrol et
+  const isSlotTaken = (startHour, dur) => {
+    const slotStart = startHour * 60;
+    const slotEnd   = slotStart + dur * 60;
+    return takenRanges.some(({ start, end }) => {
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      const resStart = sh * 60 + sm;
+      const resEnd   = eh * 60 + em;
+      // Çakışma: slot sonu > rezervasyon başı VE slot başı < rezervasyon sonu
+      return slotEnd > resStart && slotStart < resEnd;
+    });
+  };
+
 
   if (!selectedStation || !selectedVehicle) {
     return (
@@ -75,9 +75,17 @@ export default function Reservation({
     );
   }
 
-  // Compatible chargers: connector match + not offline
-  const compatChargers = (selectedStation.chargers || []).filter(
-    (c) => c.connector_type === (selectedVehicle.connector_type || selectedVehicle.connector) && c.status !== 'offline'
+  // İstasyon aktif değilse hiç charger gösterme
+  const stationUnavailable = selectedStation.status === 'maintenance' || selectedStation.status === 'inactive';
+
+  // Compatible chargers: connector match + sadece available (offline ve occupied çıkar) + istasyon aktif olmalı
+  const compatChargers = stationUnavailable ? [] : (selectedStation.chargers || []).filter(
+    (c) => c.connector_type === (selectedVehicle.connector_type || selectedVehicle.connector) && c.status === 'available'
+  );
+
+  // Bilgi amaçlı: uyumlu konektörü olan ama müsait olmayan şarjcılar
+  const unavailableChargers = stationUnavailable ? [] : (selectedStation.chargers || []).filter(
+    (c) => c.connector_type === (selectedVehicle.connector_type || selectedVehicle.connector) && c.status !== 'available'
   );
 
   const getSlots = () => {
@@ -85,7 +93,7 @@ export default function Reservation({
     for (let h = 8; h <= 21; h++) {
       if (h + duration > 22) continue;
       const t = `${pad2(h)}:00`;
-      const taken = takenSlots.includes(t);
+      const taken = isSlotTaken(h, duration);
       out.push({ time: t, endTime: `${pad2(h + duration)}:00`, taken });
     }
     return out;
@@ -172,13 +180,20 @@ export default function Reservation({
                   icon={getMarkerIcon(STATUS_COLOR.available)}
                   title={resData.station_name}
                 />
-                {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />}
               </GoogleMap>
             ) : (
               <div className="h-[220px] bg-slate-700 rounded-xl flex items-center justify-center text-slate-400 text-sm">
                 Harita yükleniyor…
               </div>
             )}
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${stLat},${stLng}&travelmode=driving`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex items-center justify-center gap-2 w-full bg-blue-900/40 hover:bg-blue-800/50 border border-blue-700 text-blue-300 text-xs font-semibold py-2 rounded-lg transition-colors"
+            >
+              🗺️ Google Maps'te Yol Tarifi Al
+            </a>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -242,8 +257,12 @@ export default function Reservation({
 
         {compatChargers.length === 0 ? (
           <div className="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-4 text-sm">
-            ❌ Bu istasyonda <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> uyumlu şarjcı yok.
-            Başka bir istasyon seçin.
+            {stationUnavailable
+              ? <>⛔ <strong>{selectedStation.name}</strong> istasyonu şu anda <strong>{selectedStation.status === 'maintenance' ? 'bakımda' : 'pasif'}</strong>. Rezervasyon yapılamaz. Başka bir istasyon seçin.</>
+              : unavailableChargers.length > 0
+                ? <>⛔ Bu istasyonda <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> uyumlu şarjcı var fakat şu an müsait değil. Lütfen daha sonra tekrar deneyin.</>
+                : <>❌ Bu istasyonda <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> uyumlu şarjcı yok. Başka bir istasyon seçin.</>
+            }
           </div>
         ) : (
           <div className="space-y-2">
@@ -309,16 +328,44 @@ export default function Reservation({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
               Başlangıç Saati
             </label>
-            <input
-              type="time"
-              value={slot || ''}
-              onChange={(e) => setSlot(e.target.value)}
-              className="w-full bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <p className="text-xs text-slate-500 mt-1">Saat:dakika formatında girin — test için yakın bir saat seçin</p>
+            <div className="flex flex-wrap gap-2">
+              {getSlots().map(({ time, endTime, taken }) => {
+                const isSelected = slot === time;
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    disabled={taken}
+                    onClick={() => setSlot(time)}
+                    title={taken ? 'Bu slot dolu' : `${time} – ${endTime}`}
+                    className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border transition-all
+                      ${taken
+                        ? 'bg-red-900/30 border-red-800 text-red-500 line-through cursor-not-allowed opacity-60'
+                        : isSelected
+                          ? 'bg-emerald-600 border-emerald-500 text-white shadow-lg scale-105'
+                          : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-emerald-500 hover:text-white'
+                      }`}
+                  >
+                    {time}
+                    {taken && <span className="ml-1 text-[10px]">●</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-4 mt-3 text-[11px] text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-emerald-600 inline-block" /> Müsait
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-red-900/60 border border-red-800 inline-block" /> Dolu
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-slate-700 border border-slate-600 inline-block" /> Boş
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -331,7 +378,7 @@ export default function Reservation({
             {[
               ['Şarjcı',         `${charger.charger_code} · ${charger.type} ${charger.power}kW`],
               ['Tarih',          date],
-              ['Saat Slotu',     `${slot} – ${pad2(+slot.split(':')[0] + duration)}:00`],
+              ['Saat Slotu',     `${slot} – ${pad2((+slot.split(':')[0]) + duration)}:00`],
               ['Süre',           `${duration} saat`],
               ['Max Enerji',     `${charger.power * duration} kWh`],
             ].map(([k, v]) => (
