@@ -148,13 +148,20 @@ export const getStationUsage = () => request('admin.php?type=station_usage');
 // ── Station Issues ────────────────────────────────────────────
 export const reportIssue    = (data)                          => request('issues.php', { method: 'POST', body: JSON.stringify(data) });
 export const getMyIssues    = ()                              => request('issues.php');
-export const patchIssue     = (id, status, technicianId=null) => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status, ...(technicianId ? { technician_id: technicianId } : {}) }) });
-export const getTechnicians = ()                              => request('technicians.php');
+export const patchIssue      = (id, status, technicianId=null) => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status, ...(technicianId ? { technician_id: technicianId } : {}) }) });
+export const cannotFixIssue  = (id)                           => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cannot_fix' }) });
+export const getTechnicians  = ()                             => request('technicians.php');
 
 // ── Waiting Queue ─────────────────────────────────────────────
 export const getMyQueue  = ()                              => request('queue.php');
 export const joinQueue   = (station_id, connector_type)   => request('queue.php', { method: 'POST', body: JSON.stringify({ station_id, connector_type }) });
 export const leaveQueue  = (station_id)                   => request(`queue.php?station_id=${station_id}`, { method: 'DELETE' });
+
+// ── Demo Time Control (admin only) ───────────────────────────
+export const getDemoTime   = ()              => request('demo.php');
+export const addDemoTime   = (add_seconds)   => request('demo.php', { method: 'POST', body: JSON.stringify({ add_seconds }) });
+export const setDemoOffset = (set_seconds)   => request('demo.php', { method: 'POST', body: JSON.stringify({ set_seconds }) });
+export const resetDemoTime = ()              => request('demo.php', { method: 'DELETE' });
 
 // ── Kullanıcı kendi hesabını sil ─────────────────────────────
 export const deleteMyAccount = () =>

@@ -7,7 +7,7 @@ import {
   getMyIssues, patchIssue, getTechnicians,
 } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { MAP_CENTER, CONNECTORS } from '../data/stations';
+import { MAP_CENTER, CONNECTORS } from '../constants';
 
 const STATUS_BADGE = {
   available:   'bg-emerald-900/40 text-emerald-300 border border-emerald-800',
@@ -299,7 +299,7 @@ export default function OperatorDashboard({ isLoaded }) {
     // in_progress → teknisyen seçim modalı
     if (status === 'in_progress') {
       const issue = issues.find(i => i.id === id);
-      setTechModal({ id, issueTitle: issue?.title, stationName: issue?.station_name });
+      setTechModal({ id, issueTitle: issue?.title, stationName: issue?.station_name, chargerCode: issue?.charger_code });
       setSelectedTech('');
       return;
     }
@@ -318,7 +318,9 @@ export default function OperatorDashboard({ isLoaded }) {
     setPatchingId(techModal.id);
     try {
       await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech));
-      setMsg('Teknisyen atandı, istasyon bakıma alındı ✓');
+      setMsg(techModal.chargerCode
+        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓`
+        : 'Teknisyen atandı, istasyon bakıma alındı ✓');
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -521,6 +523,9 @@ export default function OperatorDashboard({ isLoaded }) {
             <div className="p-5 space-y-4">
               <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
                 <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
+                {techModal.chargerCode && (
+                  <p className="text-xs text-orange-300 mt-0.5">⚡ Şarjcı: {techModal.chargerCode}</p>
+                )}
                 <p className="text-xs text-slate-300 mt-0.5">{techModal.issueTitle}</p>
               </div>
               <div>
@@ -537,7 +542,10 @@ export default function OperatorDashboard({ isLoaded }) {
                 </select>
               </div>
               <p className="text-xs text-slate-500">
-                🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.
+                {techModal.chargerCode
+                  ? <>🔌 Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
+                  : <>🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.</>
+                }
               </p>
               <div className="flex gap-3">
                 <button
@@ -545,7 +553,7 @@ export default function OperatorDashboard({ isLoaded }) {
                   disabled={patchingId !== null || !selectedTech}
                   className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-xl text-sm font-semibold"
                 >
-                  {patchingId !== null ? 'Atanıyor…' : '🔧 Teknisyen Ata & Bakıma Al'}
+                  {patchingId !== null ? 'Atanıyor…' : techModal.chargerCode ? '🔧 Teknisyen Ata & Offline Al' : '🔧 Teknisyen Ata & Bakıma Al'}
                 </button>
                 <button onClick={() => setTechModal(null)}
                   className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl text-sm">İptal</button>

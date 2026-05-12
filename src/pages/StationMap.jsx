@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { GoogleMap, MarkerF, InfoWindowF } from '@react-google-maps/api';
-import { MAP_CENTER } from '../data/stations';
+import { MAP_CENTER } from '../constants';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, STATUS_BADGE } from '../utils/helpers';
 import { getStations, getMyTopStation, getMyFavorites, addFavorite, removeFavorite, reportIssue, getMyQueue, joinQueue, leaveQueue } from '../services/api';
 

@@ -7,8 +7,8 @@ import {
   createStation, createCharger, updateCharger, deleteCharger, getStations,
   getMyIssues, patchIssue, getTechnicians,
 } from '../services/api';
-import { MAP_CENTER } from '../data/stations';
-import { CONNECTORS } from '../data/stations';
+
+import { MAP_CENTER, CONNECTORS } from '../constants';
 
 const PAGE_META = {
   users:        { label: 'Kullanıcılar',      icon: '👤', desc: 'Tüm kullanıcıları görüntüle ve düzenle' },
@@ -798,7 +798,8 @@ function IssuesTab() {
   const handleSave = async () => {
     // in_progress → teknisyen seçim modalı
     if (edit.status === 'in_progress') {
-      setTechModal({ id: edit.id, issueTitle: rows.find(r => r.id === edit.id)?.title, stationName: rows.find(r => r.id === edit.id)?.station_name });
+      const row = rows.find(r => r.id === edit.id);
+      setTechModal({ id: edit.id, issueTitle: row?.title, stationName: row?.station_name, chargerCode: row?.charger_code });
       setSelectedTech('');
       setEdit(null);
       return;
@@ -818,7 +819,9 @@ function IssuesTab() {
     setSaving(true);
     try {
       await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech));
-      setMsg('Teknisyen atandı, istasyon bakıma alındı ✓');
+      setMsg(techModal.chargerCode
+        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓`
+        : 'Teknisyen atandı, istasyon bakıma alındı ✓');
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -912,6 +915,9 @@ function IssuesTab() {
           <div className="space-y-4">
             <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
               <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
+              {techModal.chargerCode && (
+                <p className="text-xs text-orange-300 mt-0.5">⚡ Şarjcı: {techModal.chargerCode}</p>
+              )}
               <p className="text-xs text-slate-300 mt-0.5">{techModal.issueTitle}</p>
             </div>
             <div>
@@ -928,7 +934,10 @@ function IssuesTab() {
               </select>
             </div>
             <p className="text-xs text-slate-500">
-              🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.
+              {techModal.chargerCode
+                ? <>🔌 Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
+                : <>🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.</>
+              }
             </p>
             <div className="flex gap-3">
               <button
@@ -936,7 +945,7 @@ function IssuesTab() {
                 disabled={saving || !selectedTech}
                 className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-lg text-sm font-semibold"
               >
-                {saving ? 'Atanıyor…' : '🔧 Teknisyen Ata & Bakıma Al'}
+                {saving ? 'Atanıyor…' : techModal.chargerCode ? '🔧 Teknisyen Ata & Offline Al' : '🔧 Teknisyen Ata & Bakıma Al'}
               </button>
               <button onClick={() => setTechModal(null)}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm">İptal</button>

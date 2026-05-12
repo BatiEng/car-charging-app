@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
-import { USER_LOCATION } from '../data/stations';
+import { USER_LOCATION } from '../constants';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, pad2, todayISO, tomorrowISO } from '../utils/helpers';
 import { createReservation, cancelReservation, getReservations } from '../services/api';
 import { useAuth } from '../context/AuthContext';

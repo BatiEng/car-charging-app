@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { BRANDS, CONNECTORS } from '../data/stations';
+import { BRANDS, CONNECTORS } from '../constants';
 import { getVehicles, addVehicle, updateVehicle, deleteVehicle, deleteMyAccount } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 

@@ -13,6 +13,7 @@ import MyReservations      from './pages/MyReservations';
 import AdminDashboard      from './pages/AdminDashboard';
 import OperatorDashboard   from './pages/OperatorDashboard';
 import TechnicianView      from './pages/TechnicianView';
+import DemoTimeWidget      from './components/DemoTimeWidget';
 
 const GOOGLE_MAPS_LIBRARIES = ['places'];
 
@@ -182,6 +183,9 @@ function AppInner() {
           <TechnicianView />
         )}
       </main>
+
+      {/* ── Demo time widget — admin only ── */}
+      {user.role === 'admin' && <DemoTimeWidget />}
     </div>
   );
 }

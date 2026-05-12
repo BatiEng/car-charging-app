@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from '@react-google-maps/api';
-import { getStations, patchCharger, updateStation } from '../services/api';
+import { getStations, patchCharger, updateStation, getMyIssues, patchIssue, cannotFixIssue } from '../services/api';
 
 const MAP_LIBRARIES = ['places'];
 const MAP_CENTER    = { lat: 38.4237, lng: 27.1428 };
@@ -52,37 +52,75 @@ export default function TechnicianView() {
     libraries: MAP_LIBRARIES,
   });
 
-  const [stations,          setStations]         = useState([]);
-  const [selected,          setSelected]         = useState(null);  // selected charger
-  const [selectedStation,   setSelectedStation]  = useState(null);  // selected maintenance station
-  const [msg,               setMsg]              = useState('');
-  const [mapRef,            setMapRef]           = useState(null);
+  const [stations,        setStations]       = useState([]);
+  const [issues,          setIssues]         = useState([]);
+  const [selected,        setSelected]       = useState(null);  // selected charger
+  const [selectedStation, setSelectedStation] = useState(null); // selected maintenance station
+  const [msg,             setMsg]            = useState('');
+  const [msgType,         setMsgType]        = useState('success'); // 'success' | 'error'
+  const [actionLoading,   setActionLoading]  = useState(false);
+  const [mapRef,          setMapRef]         = useState(null);
 
-  const load = () => getStations().then(setStations).catch(() => {});
+  const load = () => {
+    getStations().then(setStations).catch(() => {});
+    getMyIssues().then(setIssues).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   const onMapLoad = useCallback(map => setMapRef(map), []);
 
+  const showMsg = (text, type = 'success') => { setMsg(text); setMsgType(type); };
+
   const handleFixCharger = async (chargerId, currentStatus) => {
     if (currentStatus === 'available') {
-      setMsg('Bu şarjcı zaten müsait durumda.');
+      showMsg('Bu şarjcı zaten müsait durumda.', 'error');
       return;
     }
     try {
       await patchCharger(chargerId, 'available');
-      setMsg('Şarjcı müsait olarak işaretlendi ✓');
+      showMsg('Şarjcı müsait olarak işaretlendi ✓');
       setSelected(null);
       load();
-    } catch (e) { setMsg(e.message); }
+    } catch (e) { showMsg(e.message, 'error'); }
   };
 
+  // Onarıldı: ilgili in_progress ticketi resolved yap → issues.php otomatik istasyonu active'e çeker
   const handleFixStation = async (stationId) => {
+    setActionLoading(true);
     try {
-      await updateStation(stationId, { status: 'active' });
-      setMsg('İstasyon aktif olarak işaretlendi ✓');
+      const issue = issues.find(
+        i => String(i.station_id) === String(stationId) && i.status === 'in_progress'
+      );
+      if (issue) {
+        await patchIssue(issue.id, 'resolved');
+      } else {
+        // Arıza kaydı yoksa direkt istasyonu aktife al
+        await updateStation(stationId, { status: 'active' });
+      }
+      showMsg('Onarım tamamlandı – istasyon aktif, ticket çözüldü ✓');
       setSelectedStation(null);
       load();
-    } catch (e) { setMsg(e.message); }
+    } catch (e) { showMsg(e.message, 'error'); }
+    finally { setActionLoading(false); }
+  };
+
+  // Onarılamaz: istasyonu pasife al, ticket in_progress kalır (admin/operatör yeniden atayabilir)
+  const handleCannotFixStation = async (stationId) => {
+    setActionLoading(true);
+    try {
+      const issue = issues.find(
+        i => String(i.station_id) === String(stationId) && i.status === 'in_progress'
+      );
+      if (issue) {
+        await cannotFixIssue(issue.id); // ticket open'a döner, istasyon inactive olur
+      } else {
+        await updateStation(stationId, { status: 'inactive' });
+      }
+      showMsg('İstasyon çevrimdışı yapıldı. Arıza kaydı yeniden açıldı, operatör yeniden atama yapabilir.', 'error');
+      setSelectedStation(null);
+      load();
+    } catch (e) { showMsg(e.message, 'error'); }
+    finally { setActionLoading(false); }
   };
 
   // All chargers flattened for the map
@@ -124,8 +162,13 @@ export default function TechnicianView() {
       </div>
 
       {msg && (
-        <div className="mx-4 mt-3 bg-emerald-900/40 border border-emerald-700 rounded-lg p-3 text-emerald-300 text-sm">
-          {msg}
+        <div className={`mx-4 mt-3 rounded-lg p-3 text-sm flex items-start justify-between gap-2 ${
+          msgType === 'error'
+            ? 'bg-red-900/40 border border-red-700 text-red-300'
+            : 'bg-emerald-900/40 border border-emerald-700 text-emerald-300'
+        }`}>
+          <span>{msg}</span>
+          <button onClick={() => setMsg('')} className="shrink-0 opacity-60 hover:opacity-100 text-xs">✕</button>
         </div>
       )}
 
@@ -193,18 +236,39 @@ export default function TechnicianView() {
                 position={{ lat: parseFloat(selectedStation.lat), lng: parseFloat(selectedStation.lng) }}
                 onCloseClick={() => setSelectedStation(null)}
               >
-                <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 200 }}>
+                <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 210 }}>
                   <p style={{ fontWeight: 600 }}>{selectedStation.name}</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selectedStation.address}</p>
                   <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}>🏗 Bakımda</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                     {(selectedStation.chargers || []).length} şarjcı
                   </p>
+                  {/* Atanmış açık ticket bilgisi */}
+                  {(() => {
+                    const issue = issues.find(
+                      i => String(i.station_id) === String(selectedStation.id) && i.status === 'in_progress'
+                    );
+                    return issue ? (
+                      <p style={{ fontSize: 10, color: '#fb923c', marginTop: 4, background: '#431407', borderRadius: 4, padding: '3px 6px' }}>
+                        🔧 {issue.title}
+                      </p>
+                    ) : null;
+                  })()}
+                  {/* Onarıldı butonu */}
                   <button
+                    disabled={actionLoading}
                     onClick={() => handleFixStation(selectedStation.id)}
-                    style={{ marginTop: 8, width: '100%', background: '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}
+                    style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                   >
-                    Bakım Bitti – Aktif Yap
+                    {actionLoading ? '…' : '✅ Onarıldı – Aktif Yap'}
+                  </button>
+                  {/* Onarılamaz butonu */}
+                  <button
+                    disabled={actionLoading}
+                    onClick={() => handleCannotFixStation(selectedStation.id)}
+                    style={{ marginTop: 6, width: '100%', background: actionLoading ? '#374151' : '#7f1d1d', color: '#fca5a5', border: '1px solid #991b1b', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
+                  >
+                    {actionLoading ? '…' : '⛔ Onarılamaz – Çevrimdışı Yap'}
                   </button>
                 </div>
               </InfoWindowF>
