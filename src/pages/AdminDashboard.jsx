@@ -774,6 +774,8 @@ function IssuesTab() {
   const [edit,         setEdit]         = useState(null);  // { id, status }
   const [techModal,    setTechModal]    = useState(null);  // { id, issueTitle, stationName } — teknisyen seçim modalı
   const [selectedTech, setSelectedTech] = useState('');
+  const [maintStart,   setMaintStart]   = useState('');
+  const [maintEnd,     setMaintEnd]     = useState('');
   const [saving,       setSaving]       = useState(false);
   const [msg,          setMsg]          = useState('');
   const [detail,       setDetail]       = useState(null);
@@ -799,6 +801,12 @@ function IssuesTab() {
     // in_progress → teknisyen seçim modalı
     if (edit.status === 'in_progress') {
       const row = rows.find(r => r.id === edit.id);
+      // Varsayılan bakım penceresi: şu an → +24 saat (datetime-local formatı)
+      const now  = new Date(); now.setSeconds(0, 0);
+      const end  = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const fmt  = d => d.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
+      setMaintStart(fmt(now));
+      setMaintEnd(fmt(end));
       setTechModal({ id: edit.id, issueTitle: row?.title, stationName: row?.station_name, chargerCode: row?.charger_code });
       setSelectedTech('');
       setEdit(null);
@@ -818,10 +826,11 @@ function IssuesTab() {
     if (!selectedTech) return;
     setSaving(true);
     try {
-      await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech));
+      const res = await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech), maintStart, maintEnd);
+      const cancelledText = res.cancelled_count > 0 ? ` ${res.cancelled_count} rezervasyon iptal edildi, iadeler yapıldı.` : '';
       setMsg(techModal.chargerCode
-        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓`
-        : 'Teknisyen atandı, istasyon bakıma alındı ✓');
+        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓${cancelledText}`
+        : `Teknisyen atandı, istasyon bakıma alındı ✓${cancelledText}`);
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -911,7 +920,7 @@ function IssuesTab() {
 
       {/* Teknisyen seçim modalı */}
       {techModal && (
-        <Modal title="Teknisyen Ata" onClose={() => setTechModal(null)}>
+        <Modal title="Teknisyen Ata & Bakım Planla" onClose={() => setTechModal(null)}>
           <div className="space-y-4">
             <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
               <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
@@ -933,6 +942,32 @@ function IssuesTab() {
                 ))}
               </select>
             </div>
+            <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-3 space-y-3">
+              <p className="text-xs text-slate-300 font-medium">🗓 Bakım Zaman Aralığı</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-slate-400">Başlangıç</label>
+                  <input
+                    type="datetime-local"
+                    value={maintStart}
+                    onChange={e => setMaintStart(e.target.value)}
+                    className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-slate-400">Tahmini Bitiş</label>
+                  <input
+                    type="datetime-local"
+                    value={maintEnd}
+                    onChange={e => setMaintEnd(e.target.value)}
+                    className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-amber-400">
+                ⚠️ Bu aralıktaki tüm rezervasyonlar iptal edilecek ve kullanıcılara otomatik iade + bildirim gönderilecek.
+              </p>
+            </div>
             <p className="text-xs text-slate-500">
               {techModal.chargerCode
                 ? <>🔌 Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
@@ -942,7 +977,7 @@ function IssuesTab() {
             <div className="flex gap-3">
               <button
                 onClick={handleAssignTechnician}
-                disabled={saving || !selectedTech}
+                disabled={saving || !selectedTech || !maintStart || !maintEnd}
                 className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-lg text-sm font-semibold"
               >
                 {saving ? 'Atanıyor…' : techModal.chargerCode ? '🔧 Teknisyen Ata & Offline Al' : '🔧 Teknisyen Ata & Bakıma Al'}

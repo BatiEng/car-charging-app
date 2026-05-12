@@ -284,6 +284,8 @@ export default function OperatorDashboard({ isLoaded }) {
   const [patchingId,    setPatchingId]    = useState(null);
   const [techModal,     setTechModal]     = useState(null); // { id, issueTitle, stationName }
   const [selectedTech,  setSelectedTech]  = useState('');
+  const [maintStart,    setMaintStart]    = useState('');
+  const [maintEnd,      setMaintEnd]      = useState('');
 
   const load = () => {
     setLoading(true);
@@ -299,6 +301,11 @@ export default function OperatorDashboard({ isLoaded }) {
     // in_progress → teknisyen seçim modalı
     if (status === 'in_progress') {
       const issue = issues.find(i => i.id === id);
+      const now = new Date(); now.setSeconds(0, 0);
+      const end = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const fmt = d => d.toISOString().slice(0, 16);
+      setMaintStart(fmt(now));
+      setMaintEnd(fmt(end));
       setTechModal({ id, issueTitle: issue?.title, stationName: issue?.station_name, chargerCode: issue?.charger_code });
       setSelectedTech('');
       return;
@@ -317,10 +324,11 @@ export default function OperatorDashboard({ isLoaded }) {
     if (!selectedTech || !techModal) return;
     setPatchingId(techModal.id);
     try {
-      await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech));
+      const res = await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech), maintStart, maintEnd);
+      const cancelledText = res.cancelled_count > 0 ? ` ${res.cancelled_count} rezervasyon iptal edildi, iadeler yapıldı.` : '';
       setMsg(techModal.chargerCode
-        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓`
-        : 'Teknisyen atandı, istasyon bakıma alındı ✓');
+        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓${cancelledText}`
+        : `Teknisyen atandı, istasyon bakıma alındı ✓${cancelledText}`);
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -517,7 +525,7 @@ export default function OperatorDashboard({ isLoaded }) {
           onClick={e => { if (e.target === e.currentTarget) setTechModal(null); }}>
           <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-              <h3 className="font-semibold text-white">🔧 Teknisyen Ata</h3>
+              <h3 className="font-semibold text-white">🔧 Teknisyen Ata & Bakım Planla</h3>
               <button onClick={() => setTechModal(null)} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
             </div>
             <div className="p-5 space-y-4">
@@ -541,6 +549,32 @@ export default function OperatorDashboard({ isLoaded }) {
                   ))}
                 </select>
               </div>
+              <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-3 space-y-3">
+                <p className="text-xs text-slate-300 font-medium">🗓 Bakım Zaman Aralığı</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-slate-400">Başlangıç</label>
+                    <input
+                      type="datetime-local"
+                      value={maintStart}
+                      onChange={e => setMaintStart(e.target.value)}
+                      className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400">Tahmini Bitiş</label>
+                    <input
+                      type="datetime-local"
+                      value={maintEnd}
+                      onChange={e => setMaintEnd(e.target.value)}
+                      className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-amber-400">
+                  ⚠️ Bu aralıktaki tüm rezervasyonlar iptal edilecek ve kullanıcılara otomatik iade + bildirim gönderilecek.
+                </p>
+              </div>
               <p className="text-xs text-slate-500">
                 {techModal.chargerCode
                   ? <>🔌 Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
@@ -550,7 +584,7 @@ export default function OperatorDashboard({ isLoaded }) {
               <div className="flex gap-3">
                 <button
                   onClick={handleAssignTechnician}
-                  disabled={patchingId !== null || !selectedTech}
+                  disabled={patchingId !== null || !selectedTech || !maintStart || !maintEnd}
                   className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-xl text-sm font-semibold"
                 >
                   {patchingId !== null ? 'Atanıyor…' : techModal.chargerCode ? '🔧 Teknisyen Ata & Offline Al' : '🔧 Teknisyen Ata & Bakıma Al'}

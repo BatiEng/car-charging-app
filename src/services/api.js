@@ -148,7 +148,7 @@ export const getStationUsage = () => request('admin.php?type=station_usage');
 // ── Station Issues ────────────────────────────────────────────
 export const reportIssue    = (data)                          => request('issues.php', { method: 'POST', body: JSON.stringify(data) });
 export const getMyIssues    = ()                              => request('issues.php');
-export const patchIssue      = (id, status, technicianId=null) => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status, ...(technicianId ? { technician_id: technicianId } : {}) }) });
+export const patchIssue      = (id, status, technicianId=null, maintenanceStart=null, maintenanceEnd=null) => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status, ...(technicianId ? { technician_id: technicianId } : {}), ...(maintenanceStart ? { maintenance_start: maintenanceStart } : {}), ...(maintenanceEnd ? { maintenance_end: maintenanceEnd } : {}) }) });
 export const cannotFixIssue  = (id)                           => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cannot_fix' }) });
 export const getTechnicians  = ()                             => request('technicians.php');
 
