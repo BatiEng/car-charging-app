@@ -71,17 +71,29 @@ export default function TechnicianView() {
 
   const showMsg = (text, type = 'success') => { setMsg(text); setMsgType(type); };
 
-  const handleFixCharger = async (chargerId, currentStatus) => {
+  const handleFixCharger = async (chargerId, chargerCode, currentStatus) => {
     if (currentStatus === 'available') {
       showMsg('Bu şarjcı zaten müsait durumda.', 'error');
       return;
     }
+    setActionLoading(true);
     try {
-      await patchCharger(chargerId, 'available');
-      showMsg('Şarjcı müsait olarak işaretlendi ✓');
+      // Bu şarjcıya ait in_progress ticket var mı?
+      const issue = issues.find(
+        i => i.charger_code === chargerCode && i.status === 'in_progress'
+      );
+      if (issue) {
+        // patchIssue resolved → hem charger'ı available yapar hem ticket'ı kapatır
+        await patchIssue(issue.id, 'resolved');
+        showMsg('Şarjcı müsait yapıldı, arıza kaydı çözüldü ✓');
+      } else {
+        await patchCharger(chargerId, 'available');
+        showMsg('Şarjcı müsait olarak işaretlendi ✓');
+      }
       setSelected(null);
       load();
     } catch (e) { showMsg(e.message, 'error'); }
+    finally { setActionLoading(false); }
   };
 
   // Onarıldı: ilgili in_progress ticketi resolved yap → issues.php otomatik istasyonu active'e çeker
@@ -220,10 +232,11 @@ export default function TechnicianView() {
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selected.type} · {selected.power} kW · {selected.connector_type}</p>
                   {selected.status !== 'available' && (
                     <button
-                      onClick={() => handleFixCharger(selected.id, selected.status)}
-                      style={{ marginTop: 8, width: '100%', background: '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: 'pointer' }}
+                      disabled={actionLoading}
+                      onClick={() => handleFixCharger(selected.id, selected.charger_code, selected.status)}
+                      style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                     >
-                      Onarıldı – Müsait İşaretle
+                      {actionLoading ? '…' : '✅ Onarıldı – Müsait İşaretle'}
                     </button>
                   )}
                 </div>

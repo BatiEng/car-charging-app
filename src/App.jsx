@@ -184,8 +184,8 @@ function AppInner() {
         )}
       </main>
 
-      {/* ── Demo time widget — admin only ── */}
-      {user.role === 'admin' && <DemoTimeWidget />}
+      {/* ── Demo time widget — admin & driver ── */}
+      {(user.role === 'admin' || user.role === 'driver') && <DemoTimeWidget />}
     </div>
   );
 }
