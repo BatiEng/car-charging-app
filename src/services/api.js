@@ -95,6 +95,9 @@ export const topUpWallet = (amount, card_number) =>
 // ── Reservations ──────────────────────────────────────────────
 export const getReservations = () => request('reservations.php');
 
+export const getChargerAvailability = (charger_id, date) =>
+  request(`reservations.php?action=availability&charger_id=${charger_id}&date=${date}`);
+
 export const createReservation = (data) =>
   request('reservations.php', { method: 'POST', body: JSON.stringify(data) });
 

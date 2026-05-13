@@ -1,6 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { fmtTime } from '../utils/helpers';
-import { getReservations, startSession, endSession, checkExtension, extendSession, markSessionOverstay } from '../services/api';
+import {
+  getReservations, startSession, endSession,
+  checkExtension, extendSession, markSessionOverstay,
+  getDemoTime,
+} from '../services/api';
+
+const GRACE_SECONDS   = 120;  // 2 dakika grace period
+const PENALTY_PER_MIN = 2.0;  // TL per overstay minute
 
 export default function ChargingSession({ activeSession, setActiveSession, setView }) {
   // ── PIN entry / session start ──────────────────────────────
@@ -21,19 +28,65 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   const [receipt,  setReceipt]  = useState(null);
   const [stopping, setStopping] = useState(false);
 
+  // ── Demo time polling ──────────────────────────────────────
+  const [demoTimeMs,    setDemoTimeMs]    = useState(null);
+  // After extension, override local reservation end time
+  const [resEndOverride, setResEndOverride] = useState(null);
+
   // ── Extension state ────────────────────────────────────────
-  const [extCheck,  setExtCheck]  = useState(null);  // null | {loading} | check result
+  const [extCheck,  setExtCheck]  = useState(null);
   const [extending, setExtending] = useState(false);
-  const [extResult, setExtResult] = useState(null);  // result after successful extend
+  const [extResult, setExtResult] = useState(null);
 
-  const timerRef           = useRef(null);
-  const overstayMarkedRef  = useRef(false);
+  const timerRef          = useRef(null);
+  const demoTimerRef      = useRef(null);
+  const overstayMarkedRef = useRef(false);
 
-  const DEMO_DURATION   = 20; // total demo seconds
-  const OVERSTAY_START  = 15; // after this many seconds overstay phase begins
-  const PENALTY_PER_MIN = 2.0; // TL per simulated overstay minute
+  // ── Compute reservation end time in ms ───────────────────
+  const reservationEndMs = (() => {
+    if (resEndOverride) return resEndOverride;
+    if (!activeSession?.reservation) return null;
+    const res = activeSession.reservation;
+    const dt  = new Date(`${res.reservation_date}T${res.end_time}`);
+    return isNaN(dt.getTime()) ? null : dt.getTime();
+  })();
+  const graceEndMs = reservationEndMs ? reservationEndMs + GRACE_SECONDS * 1000 : null;
 
-  // Load pending reservations when not in an active session
+  // ── Phase calculation (based on demo time) ────────────────
+  let phase            = 'charging';  // 'charging' | 'grace' | 'overstay'
+  let overstayMs       = 0;
+  let graceRemainingMs = GRACE_SECONDS * 1000;
+  let timeRemainingMs  = 0;
+
+  if (demoTimeMs !== null && reservationEndMs !== null) {
+    if (demoTimeMs >= graceEndMs) {
+      phase      = 'overstay';
+      overstayMs = demoTimeMs - graceEndMs;
+    } else if (demoTimeMs >= reservationEndMs) {
+      phase            = 'grace';
+      graceRemainingMs = graceEndMs - demoTimeMs;
+    } else {
+      timeRemainingMs = reservationEndMs - demoTimeMs;
+    }
+  }
+
+  const overstayTotalSeconds = overstayMs / 1000;
+  const overstayMinutes      = overstayTotalSeconds / 60;
+  const overstayPenalty      = parseFloat((overstayMinutes * PENALTY_PER_MIN).toFixed(2));
+  const graceRemainingS      = Math.max(0, Math.ceil(graceRemainingMs / 1000));
+
+  // ── Format remaining time ─────────────────────────────────
+  function fmtRemaining(ms) {
+    if (ms <= 0) return '0:00';
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}sa ${m.toString().padStart(2, '0')}dk`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  // ── Load pending reservations when no active session ──────
   useEffect(() => {
     if (!activeSession) {
       getReservations()
@@ -42,31 +95,32 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   }, [activeSession]);
 
-  // Start the live timer when a session is active
+  // ── Poll demo time every 5 seconds ───────────────────────
+  const pollDemoTime = useCallback(async () => {
+    try {
+      const d  = await getDemoTime();
+      const dt = new Date(d.demo_time.replace(' ', 'T'));
+      if (!isNaN(dt.getTime())) setDemoTimeMs(dt.getTime());
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     if (!activeSession || done) return;
-    const powerKw = parseFloat(activeSession.charger_power || activeSession.power || 22);
-    // Each tick = 1 real second, but simulate powerKw * (totalHours/DEMO_DURATION) kWh
-    const kwhPerTick = parseFloat(((powerKw * 1) / DEMO_DURATION).toFixed(4));
+    pollDemoTime();
+    demoTimerRef.current = setInterval(pollDemoTime, 5000);
+    return () => clearInterval(demoTimerRef.current);
+  }, [activeSession, done, pollDemoTime]);
+
+  // ── kWh accumulation timer (real seconds, actual rate) ────
+  useEffect(() => {
+    if (!activeSession || done) return;
+    const powerKw    = parseFloat(activeSession.charger_power || activeSession.power || 22);
+    const kwhPerTick = powerKw / 3600; // actual kWh per real second
 
     timerRef.current = setInterval(() => {
       setElapsed(e => {
         const next = e + 1;
         localStorage.setItem('ev_session_elapsed', next);
-        if (next >= DEMO_DURATION) {
-          clearInterval(timerRef.current);
-          const overstayMins = Math.max(0, next - OVERSTAY_START);
-          setKwh(prev => {
-            const finalKwh = parseFloat((prev + kwhPerTick).toFixed(4));
-            localStorage.setItem('ev_session_kwh', finalKwh);
-            setTimeout(() => {
-              endSession(activeSession.session_id, finalKwh, overstayMins)
-                .then(res => { setReceipt(res.receipt); setDone(true); })
-                .catch(() => setDone(true));
-            }, 300);
-            return finalKwh;
-          });
-        }
         return next;
       });
       setKwh(prev => {
@@ -78,21 +132,31 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     return () => clearInterval(timerRef.current);
   }, [activeSession, done]);
 
-  // Mark charger as overstay once when phase transition occurs
+  // ── Mark charger as overstay once when phase transitions ──
   useEffect(() => {
     if (!activeSession || done) return;
-    if (elapsed >= OVERSTAY_START && !overstayMarkedRef.current) {
+    if (phase === 'overstay' && !overstayMarkedRef.current) {
       overstayMarkedRef.current = true;
       markSessionOverstay(activeSession.session_id).catch(() => {});
     }
-  }, [elapsed, activeSession, done]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, activeSession, done]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset overstay marker when session changes
+  // ── Reset refs when session changes ───────────────────────
   useEffect(() => {
     overstayMarkedRef.current = false;
+    setResEndOverride(null);
+    setExtResult(null);
   }, [activeSession]);
 
-  // ── Handle PIN submit → start session ──────────────────────
+  // ── Clear localStorage when session ends ──────────────────
+  useEffect(() => {
+    if (done) {
+      localStorage.removeItem('ev_session_elapsed');
+      localStorage.removeItem('ev_session_kwh');
+    }
+  }, [done]);
+
+  // ── Handle PIN submit → start session ─────────────────────
   const handleStartSession = async (e) => {
     e.preventDefault();
     if (!selectedRes) { setPinError('Rezervasyon seçin'); return; }
@@ -100,17 +164,16 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     setPinError(''); setStarting(true);
     try {
       const result = await startSession(selectedRes.id, pin);
-      // Build activeSession object for the live view
       setActiveSession({
-        session_id:    result.session_id,
-        started_at:    result.started_at,
-        reservation:   selectedRes,
-        station_name:  selectedRes.station_name,
-        charger_power: selectedRes.charger_power,
+        session_id:     result.session_id,
+        started_at:     result.started_at,
+        reservation:    selectedRes,
+        station_name:   selectedRes.station_name,
+        charger_power:  selectedRes.charger_power,
         connector_type: selectedRes.connector_type,
-        plate:         selectedRes.plate,
-        brand:         selectedRes.brand,
-        model:         selectedRes.model,
+        plate:          selectedRes.plate,
+        brand:          selectedRes.brand,
+        model:          selectedRes.model,
       });
       setKwh(0); setElapsed(0); setDone(false);
     } catch (err) {
@@ -120,31 +183,24 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  // Clear localStorage when session ends
-  useEffect(() => {
-    if (done) {
-      localStorage.removeItem('ev_session_elapsed');
-      localStorage.removeItem('ev_session_kwh');
-    }
-  }, [done]);
-
-  // ── Handle manual stop session ────────────────────────────────────
+  // ── Handle manual stop session ────────────────────────────
   const handleStop = async () => {
     clearInterval(timerRef.current);
+    clearInterval(demoTimerRef.current);
     setStopping(true);
-    const overstayMins = Math.max(0, elapsed - OVERSTAY_START);
+    // overstay_minutes based on demo time vs reservation end + grace
+    const overstayMins = parseFloat((overstayTotalSeconds / 60).toFixed(4));
     try {
       const res = await endSession(activeSession.session_id, kwh, overstayMins);
       setReceipt(res.receipt);
       setDone(true);
     } catch (err) {
       alert(err.message);
-    } finally {
       setStopping(false);
     }
   };
 
-  // ── Extension handlers ────────────────────────────────────
+  // ── Extension handlers ─────────────────────────────────────
   const handleCheckExtension = async () => {
     setExtCheck({ loading: true });
     try {
@@ -161,6 +217,11 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       const result = await extendSession(activeSession.session_id);
       setExtResult(result);
       setExtCheck(null);
+      // Update local reservation end so phase recalculates correctly
+      const newEnd = new Date(result.new_end_time.replace(' ', 'T'));
+      if (!isNaN(newEnd.getTime())) setResEndOverride(newEnd.getTime());
+      // Reset overstay marker in case it fires again after extension
+      overstayMarkedRef.current = false;
     } catch (e) {
       alert(e.message);
     } finally {
@@ -168,7 +229,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  // ── No session yet — show PIN entry ───────────────────────
+  // ── No session yet — show PIN entry ──────────────────────
   if (!activeSession) {
     return (
       <div className="p-4 sm:p-8 max-w-xl mx-auto space-y-6">
@@ -192,7 +253,6 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               İstasyona geldiniz mi? Rezervasyonunuzu seçip araç PIN kodunuzu girin.
             </p>
 
-            {/* Reservation select */}
             <div>
               <label className="block text-xs text-slate-400 mb-1">Rezervasyon</label>
               <div className="space-y-2">
@@ -217,7 +277,6 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               </div>
             </div>
 
-            {/* PIN input */}
             <div>
               <label className="block text-xs text-slate-400 mb-1">Araç PIN Kodu</label>
               <input
@@ -254,7 +313,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     );
   }
 
-  // ── Completed ─────────────────────────────────────────────
+  // ── Completed ──────────────────────────────────────────────
   if (done) {
     const r = receipt || {};
     return (
@@ -270,13 +329,13 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
 
           <div className="bg-slate-700/50 rounded-xl p-5 text-left space-y-2.5 text-sm mb-6">
             {[
-              ['İstasyon',       r.station       || activeSession.station_name],
-              ['Araç',           r.vehicle       || `${activeSession.brand} ${activeSession.model} (${activeSession.plate})`],
-              ['Başlangıç',      r.start_time    ? new Date(r.start_time).toLocaleString('tr-TR') : '—'],
-              ['Bitiş',          r.end_time      ? new Date(r.end_time).toLocaleString('tr-TR') : '—'],
-              ['Tüketim',        r.kwh_consumed  ? `${r.kwh_consumed} kWh` : `${kwh.toFixed(2)} kWh`],
-              ['Birim Fiyat',    r.price_per_kwh ? `${r.price_per_kwh} TL/kWh` : '—'],
-              ['Süre (simüle)',  fmtTime(elapsed)],
+              ['İstasyon',      r.station       || activeSession.station_name],
+              ['Araç',          r.vehicle       || `${activeSession.brand} ${activeSession.model} (${activeSession.plate})`],
+              ['Başlangıç',     r.start_time    ? new Date(r.start_time).toLocaleString('tr-TR') : '—'],
+              ['Bitiş',         r.end_time      ? new Date(r.end_time).toLocaleString('tr-TR') : '—'],
+              ['Tüketim',       r.kwh_consumed  ? `${r.kwh_consumed} kWh` : `${kwh.toFixed(2)} kWh`],
+              ['Birim Fiyat',   r.price_per_kwh ? `${r.price_per_kwh} TL/kWh` : '—'],
+              ['Gerçek Süre',   fmtTime(elapsed)],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-slate-400">{k}</span>
@@ -291,7 +350,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
             )}
             {r.overstay_minutes > 0 && (
               <div className="flex justify-between text-red-400">
-                <span>⚠️ Overstay Cezası ({r.overstay_minutes} dk)</span>
+                <span>⚠️ Overstay Cezası ({parseFloat(r.overstay_minutes).toFixed(1)} dk)</span>
                 <span className="font-semibold">-{r.overstay_penalty} TL</span>
               </div>
             )}
@@ -321,13 +380,17 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     );
   }
 
-  // ── Active Session Live View ───────────────────────────────
-  const powerKw         = parseFloat(activeSession.charger_power || 22);
-  const pricePerKwh     = parseFloat(activeSession.reservation?.price_per_kwh || 4);
-  const cost            = (kwh * pricePerKwh).toFixed(2);
-  const isOverstay      = elapsed >= OVERSTAY_START;
-  const overstaySeconds = Math.max(0, elapsed - OVERSTAY_START);
-  const overstayPenalty = parseFloat((overstaySeconds * PENALTY_PER_MIN).toFixed(2));
+  // ── Active Session Live View ──────────────────────────────
+  const powerKw     = parseFloat(activeSession.charger_power || 22);
+  const pricePerKwh = parseFloat(activeSession.reservation?.price_per_kwh || 4);
+  const cost        = (kwh * pricePerKwh).toFixed(2);
+  const isOverstay  = phase === 'overstay';
+  const isGrace     = phase === 'grace';
+  const isCharging  = phase === 'charging';
+
+  // Overstay display values
+  const overstayDispMin = Math.floor(overstayTotalSeconds / 60);
+  const overstayDispSec = Math.floor(overstayTotalSeconds % 60);
 
   return (
     <div className="p-4 sm:p-8 max-w-2xl mx-auto">
@@ -343,7 +406,12 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         {isOverstay ? (
           <div className="flex items-center gap-2 bg-red-900/50 text-red-400 px-4 py-2 rounded-full text-sm font-semibold border border-red-700">
             <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-            ⚠️ Süre Aşıldı
+            ⚠️ Ceza Var
+          </div>
+        ) : isGrace ? (
+          <div className="flex items-center gap-2 bg-amber-900/50 text-amber-400 px-4 py-2 rounded-full text-sm font-semibold border border-amber-700">
+            <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+            ⏳ Grace Süresi
           </div>
         ) : (
           <div className="flex items-center gap-2 bg-emerald-900/50 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold border border-emerald-700">
@@ -353,13 +421,30 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         )}
       </div>
 
+      {/* Grace warning banner */}
+      {isGrace && (
+        <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-4 mb-4">
+          <p className="text-amber-400 font-semibold text-sm">⏳ Rezervasyon süreniz doldu!</p>
+          <p className="text-amber-300 text-xs mt-1">
+            Aracınızı <strong>{graceRemainingS} saniye</strong> içinde çıkarın, aksi hâlde ceza uygulanmaya başlar.
+          </p>
+          {/* Grace countdown bar */}
+          <div className="mt-2 w-full h-2 bg-amber-900 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-amber-400 rounded-full transition-all duration-1000"
+              style={{ width: `${(graceRemainingS / GRACE_SECONDS) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Overstay warning banner */}
       {isOverstay && (
         <div className="bg-red-900/30 border border-red-700 rounded-xl p-4 mb-4">
-          <p className="text-red-400 font-semibold text-sm">⚠️ Rezervasyon süreniz doldu!</p>
+          <p className="text-red-400 font-semibold text-sm">⚠️ Ceza birikmeye başladı!</p>
           <p className="text-red-300 text-xs mt-1">
-            Şarjcıyı <strong>{overstaySeconds} dakika</strong> fazla kullanıyorsunuz.
-            Ceza birikmeye devam ediyor, lütfen şarjı durdurun.
+            Şarjcıyı <strong>{overstayDispMin} dk {overstayDispSec} sn</strong> fazla
+            kullanıyorsunuz. Ceza birikmeye devam ediyor, lütfen şarjı durdurun.
           </p>
         </div>
       )}
@@ -377,7 +462,9 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               width: `${Math.min((kwh / 75) * 100, 100)}%`,
               background: isOverstay
                 ? 'linear-gradient(to right, #b91c1c, #ef4444)'
-                : 'linear-gradient(to right, #10b981, #2dd4bf)',
+                : isGrace
+                  ? 'linear-gradient(to right, #92400e, #f59e0b)'
+                  : 'linear-gradient(to right, #10b981, #2dd4bf)',
             }}
           >
             {kwh > 5 && <span className="text-white text-xs font-bold">{kwh.toFixed(1)} kWh</span>}
@@ -385,31 +472,55 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         </div>
       </div>
 
-      {/* Normal stats */}
+      {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        {[
-          { label: 'Tahmini Ücret', value: `~${cost} TL`,      color: 'text-emerald-400' },
-          { label: 'Süre',          value: fmtTime(elapsed),    color: 'text-white' },
-          { label: 'Şarj Gücü',     value: `${powerKw} kW`,    color: 'text-blue-400' },
-          { label: 'Plaka',         value: activeSession.plate, color: 'text-slate-200' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
-            <p className={`text-xl sm:text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-xs text-slate-400 mt-1">{label}</p>
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-emerald-400">~{cost} TL</p>
+          <p className="text-xs text-slate-400 mt-1">Tahmini Ücret</p>
+        </div>
+
+        {/* Time display — changes by phase */}
+        {isCharging && (
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-white">
+              {demoTimeMs ? fmtRemaining(timeRemainingMs) : '…'}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">Kalan Süre</p>
           </div>
-        ))}
+        )}
+        {isGrace && (
+          <div className="bg-amber-900/20 rounded-xl border border-amber-700 p-4 sm:p-5 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-amber-400">{graceRemainingS}sn</p>
+            <p className="text-xs text-slate-400 mt-1">Grace Süresi</p>
+          </div>
+        )}
+        {isOverstay && (
+          <div className="bg-red-900/20 rounded-xl border border-red-700 p-4 sm:p-5 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-red-400">
+              {overstayDispMin}dk {overstayDispSec}sn
+            </p>
+            <p className="text-xs text-slate-400 mt-1">Fazla Kullanım</p>
+          </div>
+        )}
+
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-blue-400">{powerKw} kW</p>
+          <p className="text-xs text-slate-400 mt-1">Şarj Gücü</p>
+        </div>
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-slate-200">{activeSession.plate}</p>
+          <p className="text-xs text-slate-400 mt-1">Plaka</p>
+        </div>
       </div>
 
       {/* Overstay penalty stats */}
       {isOverstay && (
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 text-center">
-            <p className="text-xl font-bold text-red-400">{overstaySeconds} dk</p>
-            <p className="text-xs text-slate-400 mt-1">Fazla Kullanım</p>
-          </div>
-          <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 text-center">
-            <p className="text-xl font-bold text-red-400">-{overstayPenalty} TL</p>
-            <p className="text-xs text-slate-400 mt-1">Birikmiş Ceza</p>
+          <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 text-center col-span-2">
+            <p className="text-2xl font-bold text-red-400">-{overstayPenalty} TL</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Birikmiş Ceza ({overstayMinutes.toFixed(1)} dk × {PENALTY_PER_MIN} TL/dk)
+            </p>
           </div>
         </div>
       )}
@@ -417,12 +528,12 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       {/* Extension success banner */}
       {extResult && (
         <div className="bg-emerald-900/30 border border-emerald-700 rounded-xl p-4 mb-3 text-sm text-emerald-300">
-          ✅ Uzatma başarılı! Yeni bitiş: {new Date(extResult.new_end_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} · {extResult.cost} TL düşüldü.
+          ✅ Uzatma başarılı! Yeni bitiş: {new Date(extResult.new_end_time.replace(' ', 'T')).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} · {extResult.cost} TL düşüldü.
         </div>
       )}
 
-      {/* Extend button — hidden during overstay or after extending */}
-      {!extResult && !isOverstay && (
+      {/* Extend button — only during charging, and if not already extended */}
+      {!extResult && isCharging && (
         <button
           onClick={handleCheckExtension}
           className="w-full bg-blue-900/40 hover:bg-blue-800/60 text-blue-400 font-semibold py-3 rounded-xl border border-blue-700 transition-colors mb-3"
@@ -431,20 +542,25 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         </button>
       )}
 
+      {/* Stop button */}
       <button
         onClick={handleStop}
         disabled={stopping}
         className={`w-full disabled:opacity-50 font-semibold py-3 rounded-xl border transition-colors ${
           isOverstay
             ? 'bg-red-700 hover:bg-red-600 border-red-500 text-white'
-            : 'bg-red-900/40 hover:bg-red-800/60 border-red-700 text-red-400'
+            : isGrace
+              ? 'bg-amber-700 hover:bg-amber-600 border-amber-500 text-white'
+              : 'bg-red-900/40 hover:bg-red-800/60 border-red-700 text-red-400'
         }`}
       >
         {stopping
           ? 'Durduruluyor...'
           : isOverstay
             ? `🛑 Şarjı Durdur (${overstayPenalty} TL ceza ödenecek)`
-            : 'Şarjı Durdur'
+            : isGrace
+              ? '⚠️ Şarjı Durdur (grace süresinde)'
+              : 'Şarjı Durdur'
         }
       </button>
 
@@ -462,7 +578,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
                   <div className="flex justify-between">
                     <span className="text-slate-400">Yeni Bitiş Saati</span>
                     <span className="text-white font-medium">
-                      {new Date(extCheck.new_end_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(extCheck.new_end_time.replace(' ', 'T')).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <div className="flex justify-between">

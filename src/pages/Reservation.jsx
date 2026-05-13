@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { USER_LOCATION } from '../constants';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, pad2, todayISO, tomorrowISO } from '../utils/helpers';
-import { createReservation, cancelReservation, getReservations } from '../services/api';
+import { createReservation, cancelReservation, getReservations, getChargerAvailability } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const MAP_STYLE = { width: '100%', height: '220px', borderRadius: '12px', overflow: 'hidden' };
@@ -28,13 +28,8 @@ export default function Reservation({
 
   useEffect(() => {
     if (!selectedStation || !charger) return;
-    getReservations()
-      .then(rows => {
-        const ranges = rows
-          .filter(r => r.charger_id == charger.id && r.reservation_date === date && ['pending','active','completed'].includes(r.status))
-          .map(r => ({ start: r.start_time.slice(0, 5), end: r.end_time.slice(0, 5) }));
-        setTakenRanges(ranges);
-      })
+    getChargerAvailability(charger.id, date)
+      .then(ranges => setTakenRanges(ranges))
       .catch(() => {});
   }, [charger, date, selectedStation]);
 
@@ -97,11 +92,17 @@ export default function Reservation({
 
   const getSlots = () => {
     const out = [];
-    for (let m = 8 * 60; m <= 21 * 60; m += 30) {
+    const isToday = date === todayISO();
+    const now     = new Date();
+    const nowMins = isToday ? now.getHours() * 60 + now.getMinutes() : -1;
+
+    for (let m = 0; m <= 23 * 60; m += 30) {
       const endM = m + duration * 60;
-      if (endM > 22 * 60) continue; // 22:00'den sonraya taşan slotları atla
+      if (endM > 24 * 60) continue; // gece yarısından taşanları atla
+      // Bugün için geçmiş saatleri gösterme
+      if (isToday && endM <= nowMins) continue;
       const time    = `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
-      const endTime = `${pad2(Math.floor(endM / 60))}:${pad2(endM % 60)}`;
+      const endTime = endM === 24 * 60 ? '00:00' : `${pad2(Math.floor(endM / 60))}:${pad2(endM % 60)}`;
       const taken   = isSlotTaken(time, duration);
       out.push({ time, endTime, taken });
     }
@@ -400,10 +401,6 @@ export default function Reservation({
               <span className="font-semibold text-white">Tahmini Tutar</span>
               <span className="font-bold text-emerald-400 text-lg">~{estCost} TL</span>
             </div>
-          </div>
-
-          <div className="bg-emerald-900/30 border border-emerald-700 text-emerald-300 text-xs rounded-lg p-3 mb-4 flex gap-2 items-center">
-            ✅ <strong>{charger.connector_type}</strong> konektörü {selectedVehicle.brand} {selectedVehicle.model} ile uyumlu
           </div>
 
           {error && (

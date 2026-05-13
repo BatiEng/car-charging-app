@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { getDemoTime, addDemoTime, resetDemoTime } from '../services/api';
 
 const PRESETS = [
+  { label: '+15dk',  seconds: 15 * 60 },
   { label: '+30dk',  seconds: 30 * 60 },
+  { label: '+59dk',  seconds: 59 * 60 },
   { label: '+1sa',   seconds: 60 * 60 },
   { label: '+2sa',   seconds: 2 * 60 * 60 },
   { label: '+6sa',   seconds: 6 * 60 * 60 },
@@ -86,7 +88,7 @@ export default function DemoTimeWidget() {
 
       {/* Expanded panel */}
       {open && (
-        <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-64 p-4">
+        <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-72 p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div>
@@ -105,7 +107,7 @@ export default function DemoTimeWidget() {
           </div>
 
           {/* Preset buttons */}
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
             {PRESETS.map(({ label, seconds }) => (
               <button
                 key={label}
