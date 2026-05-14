@@ -16,6 +16,7 @@ async function request(path, options = {}) {
 
   const res  = await fetch(`${BASE}/${path}`, { ...options, headers });
   const data = await res.json().catch(() => ({}));
+  console.log(`[API] ${options.method || 'GET'} ${path}`, { status: res.status, data });
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 }

@@ -356,7 +356,7 @@ export default function VehicleRegistration({
           <button
             onClick={() => setShowDeleteConfirm(true)}
             disabled={deletingAccount}
-            className="shrink-0 bg-red-900/40 hover:bg-red-800/60 border border-red-700 text-red-400 text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="shrink-0 bg-red-700 hover:bg-red-600 border border-red-600 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
           >
             {deletingAccount ? 'Siliniyor…' : ' Hesabımı Sil'}
           </button>

@@ -3,10 +3,10 @@ import { getReservations, cancelReservation, getMyQueue, leaveQueue } from '../s
 import { useAuth } from '../context/AuthContext';
 
 const STATUS_STYLE = {
-  pending:   { bg: 'bg-yellow-900/40 border-yellow-700', text: 'text-yellow-300', label: 'Bekliyor' },
-  active:    { bg: 'bg-blue-900/40 border-blue-700',     text: 'text-blue-300',   label: 'Aktif' },
-  completed: { bg: 'bg-blue-900/40 border-blue-700', text: 'text-blue-300', label: 'Tamamlandı' },
-  cancelled: { bg: 'bg-gray-100/40 border-gray-300',   text: 'text-gray-500', label: 'İptal Edildi' },
+  pending:   { bg: 'bg-amber-50 border-amber-400',   text: 'text-amber-700',  badge: 'bg-amber-100 border-amber-400 text-amber-700',  label: 'Bekliyor' },
+  active:    { bg: 'bg-green-50 border-green-400',   text: 'text-green-700',  badge: 'bg-green-100 border-green-400 text-green-700',  label: 'Aktif' },
+  completed: { bg: 'bg-blue-50  border-blue-400',    text: 'text-blue-700',   badge: 'bg-blue-100  border-blue-400  text-blue-700',   label: 'Tamamlandı' },
+  cancelled: { bg: 'bg-gray-100 border-gray-300',    text: 'text-gray-500',   badge: 'bg-gray-200  border-gray-400  text-gray-600',   label: 'İptal Edildi' },
 };
 
 export default function MyReservations({ setView }) {
@@ -142,7 +142,7 @@ export default function MyReservations({ setView }) {
           const s = STATUS_STYLE[status];
           return (
             <div key={status}>
-              <h3 className={`text-sm font-semibold mb-3 ${s.text}`}>
+              <h3 className={`text-sm font-semibold mb-3 ${s.text} uppercase tracking-wide`}>
                 {s.label} ({list.length})
               </h3>
               <div className="space-y-3">
@@ -152,7 +152,7 @@ export default function MyReservations({ setView }) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-gray-900">{r.station_name}</p>
-                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text}`}>
+                          <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.badge}`}>
                             {s.label}
                           </span>
                         </div>
