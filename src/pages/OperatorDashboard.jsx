@@ -25,8 +25,8 @@ const STATUS_DOT = {
   inactive:    '#64748b',
   maintenance: '#fb923c',
 };
-const STATUS_LABELS         = { active:' Aktif', inactive:' Pasif', maintenance:' Bakımda' };
-const CHARGER_STATUS_LABELS = { available:'Müsait', occupied:'Dolu', offline:'Çevrimdışı' };
+const STATUS_LABELS         = { active:' Active', inactive:' Inactive', maintenance:' Under Maintenance' };
+const CHARGER_STATUS_LABELS = { available:'Available', occupied:'Occupied', offline:'Offline' };
 const STATION_STATUSES      = ['active', 'inactive', 'maintenance'];
 const MINI_MAP_STYLE        = { width:'100%', height:'260px' };
 const MINI_MAP_OPTIONS      = { disableDefaultUI:true, clickableIcons:false };
@@ -44,21 +44,21 @@ function ChargerList({ chargers, onChange, onDelete }) {
           className="bg-gray-50 border border-gray-300 rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500 font-medium">
-              {ch._new ? `Yeni Şarjcı #${idx + 1}` : `Şarjcı #${idx + 1} (ID: ${ch.id})`}
+              {ch._new ? `New Charger #${idx + 1}` : `Charger #${idx + 1} (ID: ${ch.id})`}
             </span>
             <button type="button" onClick={() => onDelete(idx, ch)}
-              className="text-xs text-red-400 hover:text-red-300"> Kaldır</button>
+              className="text-xs text-red-400 hover:text-red-300"> Remove</button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-gray-400">Kod *</label>
+              <label className="text-[10px] text-gray-400">Code *</label>
               <input value={ch.charger_code}
                 onChange={e => update(idx, 'charger_code', e.target.value.toUpperCase())}
-                placeholder="örn. ST1-01"
+                placeholder="e.g. ST1-01"
                 className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"/>
             </div>
             <div>
-              <label className="text-[10px] text-gray-400">Tip</label>
+              <label className="text-[10px] text-gray-400">Type</label>
               <select value={ch.type} onChange={e => update(idx, 'type', e.target.value)}
                 className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs">
                 <option value="AC">AC</option>
@@ -66,7 +66,7 @@ function ChargerList({ chargers, onChange, onDelete }) {
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-gray-400">Güç (kW) *</label>
+              <label className="text-[10px] text-gray-400">Power (kW) *</label>
               <input type="number" min="1" value={ch.power}
                 onChange={e => update(idx, 'power', e.target.value)}
                 placeholder="22"
@@ -80,10 +80,10 @@ function ChargerList({ chargers, onChange, onDelete }) {
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-gray-400">Konektör *</label>
+            <label className="text-[10px] text-gray-400">Connector *</label>
             <select value={ch.connector_type} onChange={e => update(idx, 'connector_type', e.target.value)}
               className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs">
-              <option value="">Seçin…</option>
+              <option value="">Select…</option>
               {CONNECTORS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -112,11 +112,11 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.address) { setErr('Ad ve adres zorunlu'); return; }
-    if (!form.lat  || !form.lng)     { setErr('Haritadan konum seçin'); return; }
+    if (!form.name || !form.address) { setErr('Name and address are required'); return; }
+    if (!form.lat  || !form.lng)     { setErr('Select a location on the map'); return; }
     const filled = chargers.filter(c => c.charger_code || c.power || c.connector_type);
     for (const c of filled) {
-      if (!c.charger_code || !c.power || !c.connector_type) { setErr('Tüm şarjcı alanlarını doldurun'); return; }
+      if (!c.charger_code || !c.power || !c.connector_type) { setErr('Fill in all charger fields'); return; }
     }
     setSaving(true); setErr('');
     try {
@@ -137,7 +137,7 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
       <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-4xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>
-            <h3 className="font-semibold text-gray-900">İstasyonu Düzenle</h3>
+            <h3 className="font-semibold text-gray-900">Edit Station</h3>
             <p className="text-gray-500 text-xs mt-0.5">{station.name}</p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none"></button>
@@ -146,17 +146,17 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4 overflow-y-auto max-h-[70vh] pr-1">
               <div>
-                <label className="text-xs text-gray-500">İstasyon Adı *</label>
+                <label className="text-xs text-gray-500">Station Name *</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Adres *</label>
+                <label className="text-xs text-gray-500">Address *</label>
                 <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                   className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Durum</label>
+                <label className="text-xs text-gray-500">Status</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
                   className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm">
                   {STATION_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
@@ -164,38 +164,38 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-gray-500">Enlem</label>
-                  <input readOnly value={form.lat ?? ''} placeholder="Haritadan seç"
+                  <label className="text-xs text-gray-500">Latitude</label>
+                  <input readOnly value={form.lat ?? ''} placeholder="Select on map"
                     className="w-full mt-1 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Boylam</label>
-                  <input readOnly value={form.lng ?? ''} placeholder="Haritadan seç"
+                  <label className="text-xs text-gray-500">Longitude</label>
+                  <input readOnly value={form.lng ?? ''} placeholder="Select on map"
                     className="w-full mt-1 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
                 </div>
               </div>
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide"> Şarj Üniteleri</p>
+                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide"> Charging Units</p>
                   <button type="button" onClick={handleAddCharger}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-blue-400 px-2 py-1 rounded-lg">+ Ekle</button>
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-blue-400 px-2 py-1 rounded-lg">+ Add</button>
                 </div>
                 <ChargerList chargers={chargers} onChange={setChargers} onDelete={handleDeleteCharger}/>
                 {chargers.length === 0 && (
-                  <p className="text-xs text-gray-400 text-center py-3">Şarjcı yok. "+ Ekle" ile ekleyin.</p>
+                  <p className="text-xs text-gray-400 text-center py-3">No chargers. Use "+ Add" to add one.</p>
                 )}
               </div>
               {err && <p className="text-red-400 text-sm">{err}</p>}
               <button onClick={handleSave} disabled={saving}
                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold">
-                {saving ? 'Kaydediliyor…' : ' Değişiklikleri Kaydet'}
+                {saving ? 'Saving…' : ' Save Changes'}
               </button>
             </div>
             <div>
-              <p className="text-xs text-gray-500 mb-2"> Haritaya tıklayarak konumu güncelleyin</p>
+              <p className="text-xs text-gray-500 mb-2"> Click on the map to update location</p>
               {!isLoaded ? (
                 <div className="flex items-center justify-center bg-gray-100 rounded-xl h-64">
-                  <p className="text-gray-500 text-sm animate-pulse">Harita yükleniyor…</p>
+                  <p className="text-gray-500 text-sm animate-pulse">Loading map…</p>
                 </div>
               ) : (
                 <div className="rounded-xl overflow-hidden border border-gray-300">
@@ -250,15 +250,15 @@ function ChargerRow({ ch, onStatusChange }) {
       <div className="flex gap-2 shrink-0">
         {ch.status !== 'available' && (
           <button onClick={() => onStatusChange(ch.id, 'available')}
-            className="text-xs bg-blue-800 hover:bg-blue-700 text-blue-200 px-3 py-1.5 rounded-lg transition-colors"> Müsait</button>
+            className="text-xs bg-blue-800 hover:bg-blue-700 text-blue-200 px-3 py-1.5 rounded-lg transition-colors"> Available</button>
         )}
         {ch.status !== 'offline' && (
           <button onClick={() => onStatusChange(ch.id, 'offline')}
-            className="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-3 py-1.5 rounded-lg transition-colors">Çevrimdışı</button>
+            className="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-3 py-1.5 rounded-lg transition-colors">Offline</button>
         )}
         {ch.status !== 'occupied' && (
           <button onClick={() => onStatusChange(ch.id, 'occupied')}
-            className="text-xs bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1.5 rounded-lg transition-colors">Dolu</button>
+            className="text-xs bg-blue-900 hover:bg-blue-800 text-blue-200 px-3 py-1.5 rounded-lg transition-colors">Occupied</button>
         )}
       </div>
     </div>
@@ -266,9 +266,9 @@ function ChargerRow({ ch, onStatusChange }) {
 }
 
 const ISSUE_STATUS_STYLE = {
-  open:        { badge: 'bg-red-900/40 text-red-300 border border-red-800',        label: ' Açık' },
-  in_progress: { badge: 'bg-yellow-900/40 text-yellow-300 border border-yellow-800', label: ' Devam Ediyor' },
-  resolved:    { badge: 'bg-blue-900/40 text-blue-300 border border-blue-800', label: ' Çözüldü' },
+  open:        { badge: 'bg-red-900/40 text-red-300 border border-red-800',        label: ' Open' },
+  in_progress: { badge: 'bg-yellow-900/40 text-yellow-300 border border-yellow-800', label: ' In Progress' },
+  resolved:    { badge: 'bg-blue-900/40 text-blue-300 border border-blue-800', label: ' Resolved' },
 };
 
 //  Main 
@@ -314,7 +314,7 @@ export default function OperatorDashboard({ isLoaded }) {
     try {
       await patchIssue(id, status);
       setIssues(prev => prev.map(i => i.id === id ? { ...i, status } : i));
-      setMsg(`Arıza durumu güncellendi → ${ISSUE_STATUS_STYLE[status]?.label || status}`);
+      setMsg(`Issue status updated → ${ISSUE_STATUS_STYLE[status]?.label || status}`);
       load();
     } catch (e) { setMsg(e.message); }
     finally { setPatchingId(null); }
@@ -325,10 +325,10 @@ export default function OperatorDashboard({ isLoaded }) {
     setPatchingId(techModal.id);
     try {
       const res = await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech), maintStart, maintEnd);
-      const cancelledText = res.cancelled_count > 0 ? ` ${res.cancelled_count} rezervasyon iptal edildi, iadeler yapıldı.` : '';
+      const cancelledText = res.cancelled_count > 0 ? ` ${res.cancelled_count} reservation(s) cancelled, refunds issued.` : '';
       setMsg(techModal.chargerCode
-        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ${cancelledText}`
-        : `Teknisyen atandı, istasyon bakıma alındı ${cancelledText}`);
+        ? `Technician assigned, ${techModal.chargerCode} charger taken offline ${cancelledText}`
+        : `Technician assigned, station set to maintenance ${cancelledText}`);
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -346,7 +346,7 @@ export default function OperatorDashboard({ isLoaded }) {
   const handleChargerStatus = async (chargerId, newStatus) => {
     try {
       await patchCharger(chargerId, newStatus);
-      setMsg(`Şarjcı durumu güncellendi → ${CHARGER_STATUS_LABELS[newStatus] || newStatus}`);
+      setMsg(`Charger status updated → ${CHARGER_STATUS_LABELS[newStatus] || newStatus}`);
       load();
     } catch (e) { setMsg(e.message); }
   };
@@ -357,12 +357,12 @@ export default function OperatorDashboard({ isLoaded }) {
       {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">İstasyonlarım</h2>
-          <p className="text-gray-500 text-sm mt-0.5">{user?.name} · Operatör</p>
+          <h2 className="text-2xl font-bold text-gray-900">My Stations</h2>
+          <p className="text-gray-500 text-sm mt-0.5">{user?.name} · Operator</p>
         </div>
         <button onClick={load}
           className="flex items-center gap-1.5 text-sm bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-lg transition-colors">
-           Yenile
+           Refresh
         </button>
       </div>
 
@@ -377,24 +377,24 @@ export default function OperatorDashboard({ isLoaded }) {
       {/* İstatistik kartları */}
       {myStations.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon="" label="İstasyon"      value={myStations.length} />
-          <StatCard icon="" label="Toplam Şarjcı" value={totalChargers} />
-          <StatCard icon="" label="Müsait"        value={availableCount} color="text-blue-400" />
-          <StatCard icon="" label="Çevrimdışı"    value={offlineCount}   color="text-red-400" />
+          <StatCard icon="" label="Stations"      value={myStations.length} />
+          <StatCard icon="" label="Total Chargers" value={totalChargers} />
+          <StatCard icon="" label="Available"     value={availableCount} color="text-blue-400" />
+          <StatCard icon="" label="Offline"       value={offlineCount}   color="text-red-400" />
         </div>
       )}
 
       {/* Yükleniyor */}
       {loading && (
-        <div className="text-center py-12 text-gray-500 animate-pulse">Yükleniyor…</div>
+        <div className="text-center py-12 text-gray-500 animate-pulse">Loading…</div>
       )}
 
       {/* Boş durum */}
       {!loading && myStations.length === 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-10 text-center">
           <div className="text-5xl mb-4"></div>
-          <p className="text-gray-900 font-semibold">Henüz atanmış istasyonunuz yok</p>
-          <p className="text-gray-500 text-sm mt-1">Bir yönetici tarafından size istasyon atanacaktır.</p>
+          <p className="text-gray-900 font-semibold">No stations assigned yet</p>
+          <p className="text-gray-500 text-sm mt-1">An admin will assign a station to you.</p>
         </div>
       )}
 
@@ -418,14 +418,14 @@ export default function OperatorDashboard({ isLoaded }) {
                 </div>
                 <p className="text-gray-500 text-sm mt-0.5 truncate"> {station.address}</p>
                 <div className="flex gap-4 mt-2 text-xs">
-                  <span className="text-blue-400"> {avail} müsait</span>
-                  {occ > 0 && <span className="text-blue-400"> {occ} dolu</span>}
-                  {off > 0 && <span className="text-red-400"> {off} çevrimdışı</span>}
+                  <span className="text-blue-400"> {avail} available</span>
+                  {occ > 0 && <span className="text-blue-400"> {occ} occupied</span>}
+                  {off > 0 && <span className="text-red-400"> {off} offline</span>}
                 </div>
               </div>
               <button onClick={() => setEditing(station)}
                 className="shrink-0 flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-blue-400 font-medium px-4 py-2 rounded-xl transition-colors">
-                 Düzenle
+                 Edit
               </button>
             </div>
 
@@ -433,12 +433,12 @@ export default function OperatorDashboard({ isLoaded }) {
             <div className="p-4 space-y-2">
               {chargers.length === 0 ? (
                 <p className="text-gray-400 text-sm text-center py-4">
-                  Şarj ünitesi yok. "Düzenle" butonuyla ekleyebilirsiniz.
+                  No charging units. You can add them with the "Edit" button.
                 </p>
               ) : (
                 <>
                   <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">
-                    Şarj Üniteleri ({chargers.length})
+                    Charging Units ({chargers.length})
                   </p>
                   {chargers.map(ch => (
                     <ChargerRow key={ch.id} ch={ch} onStatusChange={handleChargerStatus}/>
@@ -458,11 +458,11 @@ export default function OperatorDashboard({ isLoaded }) {
             className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-100/30 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-gray-900 font-semibold"> Arıza Bildirimleri</span>
+              <span className="text-gray-900 font-semibold"> Issue Reports</span>
               <span className="text-xs bg-red-900/50 text-red-300 border border-red-800 px-2 py-0.5 rounded-full">
-                {issues.filter(i => i.status === 'open').length} açık
+                {issues.filter(i => i.status === 'open').length} open
               </span>
-              <span className="text-xs text-gray-500">({issues.length} toplam)</span>
+              <span className="text-xs text-gray-500">({issues.length} total)</span>
             </div>
             <span className="text-gray-500 text-sm">{issuesOpen ? '' : ''}</span>
           </button>
@@ -495,7 +495,7 @@ export default function OperatorDashboard({ isLoaded }) {
                           disabled={patchingId === issue.id}
                           className="text-xs bg-yellow-900/50 hover:bg-yellow-900/80 border border-yellow-700 text-yellow-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                         >
-                          {patchingId === issue.id ? '…' : ' Devam Ediyor'}
+                          {patchingId === issue.id ? '…' : ' In Progress'}
                         </button>
                       )}
                       {issue.status === 'in_progress' && (
@@ -504,11 +504,11 @@ export default function OperatorDashboard({ isLoaded }) {
                           disabled={patchingId === issue.id}
                           className="text-xs bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 text-blue-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                         >
-                          {patchingId === issue.id ? '…' : ' Çözüldü'}
+                          {patchingId === issue.id ? '…' : ' Resolved'}
                         </button>
                       )}
                       {issue.status === 'resolved' && (
-                        <span className="text-xs text-gray-400 italic py-1.5">Kapatıldı</span>
+                        <span className="text-xs text-gray-400 italic py-1.5">Closed</span>
                       )}
                     </div>
                   </div>
@@ -525,35 +525,35 @@ export default function OperatorDashboard({ isLoaded }) {
           onClick={e => { if (e.target === e.currentTarget) setTechModal(null); }}>
           <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900"> Teknisyen Ata & Bakım Planla</h3>
+              <h3 className="font-semibold text-gray-900"> Assign Technician & Schedule Maintenance</h3>
               <button onClick={() => setTechModal(null)} className="text-gray-500 hover:text-white text-xl leading-none"></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
                 <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
                 {techModal.chargerCode && (
-                  <p className="text-xs text-orange-300 mt-0.5"> Şarjcı: {techModal.chargerCode}</p>
+                  <p className="text-xs text-orange-300 mt-0.5"> Charger: {techModal.chargerCode}</p>
                 )}
                 <p className="text-xs text-gray-700 mt-0.5">{techModal.issueTitle}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Teknisyen Seç *</label>
+                <label className="text-xs text-gray-500">Select Technician *</label>
                 <select
                   value={selectedTech}
                   onChange={e => setSelectedTech(e.target.value)}
                   className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"
                 >
-                  <option value="">— Teknisyen seçin —</option>
+                  <option value="">— Select technician —</option>
                   {technicians.map(t => (
                     <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
                   ))}
                 </select>
               </div>
               <div className="bg-gray-50 border border-gray-300 rounded-xl p-3 space-y-3">
-                <p className="text-xs text-gray-700 font-medium"> Bakım Zaman Aralığı</p>
+                <p className="text-xs text-gray-700 font-medium"> Maintenance Time Window</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] text-gray-500">Başlangıç</label>
+                    <label className="text-[10px] text-gray-500">Start</label>
                     <input
                       type="datetime-local"
                       value={maintStart}
@@ -562,7 +562,7 @@ export default function OperatorDashboard({ isLoaded }) {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500">Tahmini Bitiş</label>
+                    <label className="text-[10px] text-gray-500">Estimated End</label>
                     <input
                       type="datetime-local"
                       value={maintEnd}
@@ -572,13 +572,13 @@ export default function OperatorDashboard({ isLoaded }) {
                   </div>
                 </div>
                 <p className="text-[10px] text-amber-400">
-                   Bu aralıktaki tüm rezervasyonlar iptal edilecek ve kullanıcılara otomatik iade + bildirim gönderilecek.
+                   All reservations in this window will be cancelled and users will receive automatic refunds + notifications.
                 </p>
               </div>
               <p className="text-xs text-gray-400">
                 {techModal.chargerCode
-                  ? <> Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
-                  : <> Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.</>
+                  ? <> The selected technician will be notified and <span className="text-orange-400">{techModal.chargerCode}</span> charger will be taken offline.</>
+                  : <> The selected technician will be notified and the station will be set to <span className="text-yellow-400">Under Maintenance</span> status.</>
                 }
               </p>
               <div className="flex gap-3">
@@ -587,10 +587,10 @@ export default function OperatorDashboard({ isLoaded }) {
                   disabled={patchingId !== null || !selectedTech || !maintStart || !maintEnd}
                   className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-xl text-sm font-semibold"
                 >
-                  {patchingId !== null ? 'Atanıyor…' : techModal.chargerCode ? ' Teknisyen Ata & Offline Al' : ' Teknisyen Ata & Bakıma Al'}
+                  {patchingId !== null ? 'Assigning…' : techModal.chargerCode ? ' Assign Technician & Take Offline' : ' Assign Technician & Set Maintenance'}
                 </button>
                 <button onClick={() => setTechModal(null)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-white py-2 rounded-xl text-sm">İptal</button>
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-white py-2 rounded-xl text-sm">Cancel</button>
               </div>
             </div>
           </div>
@@ -604,7 +604,7 @@ export default function OperatorDashboard({ isLoaded }) {
           station={editing}
           isLoaded={isLoaded}
           onClose={() => setEditing(null)}
-          onSaved={() => { setMsg('İstasyon güncellendi '); load(); }}
+          onSaved={() => { setMsg('Station updated '); load(); }}
         />
       )}
     </div>

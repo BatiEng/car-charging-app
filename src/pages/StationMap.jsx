@@ -565,16 +565,16 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           {/*  En çok kullanılan istasyon kartı  */}
           {topStation && (
             <div
-              className="mx-3 mt-3 mb-1 bg-purple-900/30 border border-purple-700 rounded-xl px-3 py-2.5 cursor-pointer hover:bg-purple-900/50 transition-colors"
+              className="mx-3 mt-3 mb-1 bg-violet-50 border border-violet-300 rounded-xl px-3 py-2.5 cursor-pointer hover:bg-violet-100 transition-colors"
               onClick={() => {
                 const full = stations.find(s => s.id === topStation.id);
                 if (full) { handleStationSelect(full); }
               }}
             >
-              <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide mb-1"> En Çok Kullandığınız İstasyon</p>
+              <p className="text-[10px] text-violet-600 font-semibold uppercase tracking-wide mb-1">Your Most Used Station</p>
               <p className="text-sm font-semibold text-gray-900">{topStation.name}</p>
               <p className="text-xs text-gray-500">{topStation.address}</p>
-              <p className="text-xs text-purple-300 mt-1">{topStation.session_count} tamamlanmış şarj</p>
+              <p className="text-xs text-violet-600 font-medium mt-1">{topStation.session_count} completed sessions</p>
             </div>
           )}
 
@@ -593,7 +593,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                     <div className="flex items-center gap-1.5 min-w-0">
                       <p className="font-medium text-sm text-gray-900 truncate">{station.name}</p>
                       {topStation?.id === station.id && (
-                        <span className="shrink-0 text-[10px] bg-purple-900/60 border border-purple-700 text-purple-300 px-1.5 py-0.5 rounded-full"></span>
+                        <span className="shrink-0 text-[10px] bg-violet-100 border border-violet-400 text-violet-700 font-semibold px-1.5 py-0.5 rounded-full">Favorite</span>
                       )}
                     </div>
                     <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[status] || 'bg-gray-100 text-gray-700'}`}>

@@ -74,17 +74,17 @@ export default function Reservation({
       <div className="p-8 max-w-xl mx-auto text-center">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-14">
           <div className="text-5xl mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Hiçbir Şey Seçilmedi</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Nothing Selected</h2>
           <p className="text-gray-500 text-sm mb-6">
-            Önce bir araç kaydedin ve haritadan bir istasyon seçin.
+            Please register a vehicle first and select a station from the map.
           </p>
           <button onClick={() => setView('vehicles')}
             className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-500 text-sm font-semibold mr-3 transition-colors">
-            Araçlarım
+            My Vehicles
           </button>
           <button onClick={() => setView('map')}
             className="bg-gray-100 text-gray-800 px-6 py-2.5 rounded-xl hover:bg-gray-200 text-sm font-semibold transition-colors">
-            İstasyon Bul
+            Find a Station
           </button>
         </div>
       </div>
@@ -165,19 +165,19 @@ export default function Reservation({
             <div className="w-16 h-16 bg-blue-900/50 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
               
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">Rezervasyon Onaylandı!</h2>
-            <p className="text-gray-500 text-sm mt-1">Şarj slotunuz rezerve edildi.</p>
+            <h2 className="text-2xl font-bold text-gray-900">Reservation Confirmed!</h2>
+            <p className="text-gray-500 text-sm mt-1">Your charging slot has been reserved.</p>
           </div>
 
           {/* Summary */}
           <div className="bg-gray-50 rounded-xl p-5 space-y-2.5 text-sm mb-5">
             {[
-              ['İstasyon',    resData.station_name || selectedStation.name],
-              ['Şarjcı Kodu', resData.charger_code],
-              ['Konektör',    resData.connector_type, ' Uyumlu'],
-              ['Araç',        `${selectedVehicle.brand} ${selectedVehicle.model} (${selectedVehicle.plate})`],
-              ['Tarih',       resData.reservation_date || date],
-              ['Saat',        `${resData.start_time?.slice(0,5) || slot} – ${resData.end_time?.slice(0,5) || (slot ? addMins(slot, duration * 60) : '')} (${duration}s)`],
+              ['Station',       resData.station_name || selectedStation.name],
+              ['Charger Code',  resData.charger_code],
+              ['Connector',     resData.connector_type, ' Compatible'],
+              ['Vehicle',       `${selectedVehicle.brand} ${selectedVehicle.model} (${selectedVehicle.plate})`],
+              ['Date',          resData.reservation_date || date],
+              ['Time',          `${resData.start_time?.slice(0,5) || slot} – ${resData.end_time?.slice(0,5) || (slot ? addMins(slot, duration * 60) : '')} (${duration}h)`],
             ].map(([k, v, suffix]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-gray-500">{k}</span>
@@ -185,14 +185,14 @@ export default function Reservation({
               </div>
             ))}
             <div className="flex justify-between border-t border-gray-300 pt-2.5">
-              <span className="font-semibold text-gray-900">Kesilen Tutar</span>
+              <span className="font-semibold text-gray-900">Amount Charged</span>
               <span className="font-bold text-blue-400 text-lg">
                 {parseFloat(resData.amount_deducted || resData.estimated_cost || estCost).toFixed(2)} TL
               </span>
             </div>
             {resData.wallet_balance !== undefined && (
               <div className="flex justify-between text-xs text-gray-400">
-                <span>Kalan Bakiye</span>
+                <span>Remaining Balance</span>
                 <span>{parseFloat(resData.wallet_balance).toFixed(2)} TL</span>
               </div>
             )}
@@ -200,10 +200,10 @@ export default function Reservation({
 
           {/* Route Map */}
           <div className="mb-5">
-            <p className="text-sm font-semibold text-gray-700 mb-2"> İstasyona Yol</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2"> Directions to Station</p>
             {isLoaded ? (
               <GoogleMap mapContainerStyle={MAP_STYLE} center={USER_LOCATION} zoom={12}>
-                <MarkerF position={USER_LOCATION} icon={getUserMarkerIcon()} title="Konumunuz" />
+                <MarkerF position={USER_LOCATION} icon={getUserMarkerIcon()} title="Your Location" />
                 <MarkerF
                   position={{ lat: stLat, lng: stLng }}
                   icon={getMarkerIcon(STATUS_COLOR.available)}
@@ -212,7 +212,7 @@ export default function Reservation({
               </GoogleMap>
             ) : (
               <div className="h-[220px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 text-sm">
-                Harita yükleniyor…
+                Loading map…
               </div>
             )}
             <a
@@ -221,7 +221,7 @@ export default function Reservation({
               rel="noopener noreferrer"
               className="mt-2 flex items-center justify-center gap-2 w-full bg-blue-900/40 hover:bg-blue-800/50 border border-blue-700 text-blue-300 text-xs font-semibold py-2 rounded-lg transition-colors"
             >
-               Google Maps'te Yol Tarifi Al
+               Get Directions on Google Maps
             </a>
           </div>
 
@@ -230,13 +230,13 @@ export default function Reservation({
               onClick={() => setView('session')}
               className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-colors text-sm"
             >
-               Şarj Sayfasına Git
+               Go to Charging Page
             </button>
             <button
               onClick={() => setView('map')}
               className="bg-gray-100 hover:bg-gray-200 text-white font-semibold py-3 rounded-xl transition-colors text-sm"
             >
-              Haritaya Dön
+              Back to Map
             </button>
           </div>
         </div>
@@ -248,27 +248,27 @@ export default function Reservation({
   return (
     <div className="p-4 sm:p-8 max-w-3xl mx-auto">
       <div className="mb-5">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Rezervasyon Yap</h1>
-        <p className="text-gray-500 mt-1 text-sm">{selectedStation.name} istasyonunda slot rezerve et</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Make a Reservation</h1>
+        <p className="text-gray-500 mt-1 text-sm">Reserve a slot at {selectedStation.name}</p>
       </div>
 
       {/* Wallet balance warning */}
       {user && parseFloat(user.wallet_balance) < 50 && (
         <div className="mb-4 bg-yellow-900/40 border border-yellow-700 rounded-xl p-3 text-yellow-300 text-sm flex items-center gap-2">
-           Düşük bakiye ({parseFloat(user.wallet_balance).toFixed(2)} TL). Rezervasyon için
-          <button onClick={() => setView('wallet')} className="underline font-semibold">cüzdanı doldurun</button>.
+           Low balance ({parseFloat(user.wallet_balance).toFixed(2)} TL). Please
+          <button onClick={() => setView('wallet')} className="underline font-semibold">top up your wallet</button> to make a reservation.
         </div>
       )}
 
       {/* Context cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">İstasyon</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Station</p>
           <p className="font-semibold text-gray-900">{selectedStation.name}</p>
           <p className="text-sm text-gray-500">{selectedStation.address}</p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Araç</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">Vehicle</p>
           <p className="font-semibold text-gray-900">{selectedVehicle.brand} {selectedVehicle.model}</p>
           <p className="text-sm text-gray-500">{selectedVehicle.plate}</p>
           <p className="text-xs text-gray-400 mt-1">
@@ -279,18 +279,18 @@ export default function Reservation({
 
       {/* Step 1 – Charger */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4">
-        <p className="font-semibold text-gray-900 mb-0.5">Adım 1 — Şarjcı Seç</p>
+        <p className="font-semibold text-gray-900 mb-0.5">Step 1 — Select a Charger</p>
         <p className="text-xs text-gray-500 mb-4">
-          Sadece aracınızla uyumlu ({selectedVehicle.connector_type || selectedVehicle.connector}) şarjcılar gösteriliyor
+          Showing only chargers compatible with your vehicle ({selectedVehicle.connector_type || selectedVehicle.connector})
         </p>
 
         {compatChargers.length === 0 ? (
           <div className="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-4 text-sm">
             {stationUnavailable
-              ? <> <strong>{selectedStation.name}</strong> istasyonu şu anda <strong>{selectedStation.status === 'maintenance' ? 'bakımda' : 'pasif'}</strong>. Rezervasyon yapılamaz. Başka bir istasyon seçin.</>
+              ? <> <strong>{selectedStation.name}</strong> is currently <strong>{selectedStation.status === 'maintenance' ? 'under maintenance' : 'inactive'}</strong>. Reservations are not available. Please select another station.</>
               : unavailableChargers.length > 0
-                ? <> Bu istasyonda <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> uyumlu şarjcı var fakat şu an müsait değil. Lütfen daha sonra tekrar deneyin.</>
-                : <> Bu istasyonda <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> uyumlu şarjcı yok. Başka bir istasyon seçin.</>
+                ? <> This station has a <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> compatible charger, but it is not available right now. Please try again later.</>
+                : <> This station has no <strong>{selectedVehicle.connector_type || selectedVehicle.connector}</strong> compatible charger. Please select another station.</>
             }
           </div>
         ) : (
@@ -330,35 +330,35 @@ export default function Reservation({
       {/* Step 2 – Date & Time */}
       {charger && (
         <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4">
-          <p className="font-semibold text-gray-900 mb-4">Adım 2 — Tarih & Saat Seç</p>
+          <p className="font-semibold text-gray-900 mb-4">Step 2 — Select Date & Time</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Tarih</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Date</label>
               <input
                 type="date" min={demoDateStr} max={demoTomorrowStr} value={date}
                 onChange={(e) => { setDate(e.target.value); setSlot(null); }}
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-yellow-500 mt-1"> Maks. 24 saat önceden rezervasyon</p>
+              <p className="text-xs text-yellow-500 mt-1"> Reservations up to 24 hours in advance</p>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Süre</label>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Duration</label>
               <select
                 value={duration}
                 onChange={(e) => { setDuration(+e.target.value); setSlot(null); }}
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value={1}>1 Saat</option>
-                <option value={2}>2 Saat (maksimum)</option>
+                <option value={1}>1 Hour</option>
+                <option value={2}>2 Hours (maximum)</option>
               </select>
-              <p className="text-xs text-yellow-500 mt-1"> Seans başına maks. 2 saat</p>
+              <p className="text-xs text-yellow-500 mt-1"> Max. 2 hours per session</p>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Başlangıç Saati
+              Start Time
             </label>
             <div className="flex flex-wrap gap-2">
               {getSlots().map(({ time, endTime, taken }) => {
@@ -369,7 +369,7 @@ export default function Reservation({
                     type="button"
                     disabled={taken}
                     onClick={() => setSlot(time)}
-                    title={taken ? 'Bu slot dolu' : `${time} – ${endTime}`}
+                    title={taken ? 'This slot is taken' : `${time} – ${endTime}`}
                     className={`px-3 py-2 rounded-lg text-xs font-mono font-semibold border transition-all
                       ${taken
                         ? 'bg-red-900/30 border-red-800 text-red-500 line-through cursor-not-allowed opacity-60'
@@ -386,13 +386,13 @@ export default function Reservation({
             </div>
             <div className="flex gap-4 mt-3 text-[11px] text-gray-400">
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-blue-600 inline-block" /> Müsait
+                <span className="w-2.5 h-2.5 rounded bg-blue-600 inline-block" /> Available
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-red-900/60 border border-red-800 inline-block" /> Dolu
+                <span className="w-2.5 h-2.5 rounded bg-red-900/60 border border-red-800 inline-block" /> Taken
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded bg-gray-100 border border-gray-300 inline-block" /> Boş
+                <span className="w-2.5 h-2.5 rounded bg-gray-100 border border-gray-300 inline-block" /> Open
               </span>
             </div>
           </div>
@@ -402,14 +402,14 @@ export default function Reservation({
       {/* Summary & Confirm */}
       {charger && slot && (
         <div className="bg-white rounded-lg border border-blue-700 p-6">
-          <p className="font-semibold text-gray-900 mb-4">Rezervasyon Özeti</p>
+          <p className="font-semibold text-gray-900 mb-4">Reservation Summary</p>
           <div className="space-y-2 text-sm mb-5">
             {[
-              ['Şarjcı',         `${charger.charger_code} · ${charger.type} ${charger.power}kW`],
-              ['Tarih',          date],
-              ['Saat Slotu',     `${slot} – ${addMins(slot, duration * 60)}`],
-              ['Süre',           `${duration} saat`],
-              ['Max Enerji',     `${charger.power * duration} kWh`],
+              ['Charger',      `${charger.charger_code} · ${charger.type} ${charger.power}kW`],
+              ['Date',         date],
+              ['Time Slot',    `${slot} – ${addMins(slot, duration * 60)}`],
+              ['Duration',     `${duration} hour${duration > 1 ? 's' : ''}`],
+              ['Max Energy',   `${charger.power * duration} kWh`],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between">
                 <span className="text-gray-500">{k}</span>
@@ -417,7 +417,7 @@ export default function Reservation({
               </div>
             ))}
             <div className="flex justify-between border-t border-gray-300 pt-2">
-              <span className="font-semibold text-gray-900">Tahmini Tutar</span>
+              <span className="font-semibold text-gray-900">Estimated Amount</span>
               <span className="font-bold text-blue-400 text-lg">~{estCost} TL</span>
             </div>
           </div>
@@ -433,10 +433,10 @@ export default function Reservation({
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
           >
-            {loading ? 'Onaylanıyor...' : 'Rezervasyonu Onayla'}
+            {loading ? 'Confirming...' : 'Confirm Reservation'}
           </button>
           <p className="text-xs text-gray-400 mt-2 text-center">
-            {estCost} TL cüzdanınızdan kesilecek (fazlası şarj sonunda iade edilir)
+            {estCost} TL will be deducted from your wallet (any unused amount will be refunded after charging)
           </p>
         </div>
       )}

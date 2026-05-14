@@ -73,22 +73,22 @@ export default function TechnicianView() {
 
   const handleFixCharger = async (chargerId, chargerCode, currentStatus) => {
     if (currentStatus === 'available') {
-      showMsg('Bu şarjcı zaten müsait durumda.', 'error');
+      showMsg('This charger is already available.', 'error');
       return;
     }
     setActionLoading(true);
     try {
-      // Bu şarjcıya ait in_progress ticket var mı?
+      // Is there an in_progress ticket for this charger?
       const issue = issues.find(
         i => i.charger_code === chargerCode && i.status === 'in_progress'
       );
       if (issue) {
-        // patchIssue resolved → hem charger'ı available yapar hem ticket'ı kapatır
+        // patchIssue resolved → makes charger available and closes the ticket
         await patchIssue(issue.id, 'resolved');
-        showMsg('Şarjcı müsait yapıldı, arıza kaydı çözüldü ');
+        showMsg('Charger set to available, issue record resolved ');
       } else {
         await patchCharger(chargerId, 'available');
-        showMsg('Şarjcı müsait olarak işaretlendi ');
+        showMsg('Charger marked as available ');
       }
       setSelected(null);
       load();
@@ -96,7 +96,7 @@ export default function TechnicianView() {
     finally { setActionLoading(false); }
   };
 
-  // Onarıldı: ilgili in_progress ticketi resolved yap → issues.php otomatik istasyonu active'e çeker
+  // Fixed: resolve the related in_progress ticket → issues.php automatically sets station to active
   const handleFixStation = async (stationId) => {
     setActionLoading(true);
     try {
@@ -106,17 +106,17 @@ export default function TechnicianView() {
       if (issue) {
         await patchIssue(issue.id, 'resolved');
       } else {
-        // Arıza kaydı yoksa direkt istasyonu aktife al
+        // If no issue record, directly set station to active
         await updateStation(stationId, { status: 'active' });
       }
-      showMsg('Onarım tamamlandı – istasyon aktif, ticket çözüldü ');
+      showMsg('Repair complete – station active, ticket resolved ');
       setSelectedStation(null);
       load();
     } catch (e) { showMsg(e.message, 'error'); }
     finally { setActionLoading(false); }
   };
 
-  // Onarılamaz: istasyonu pasife al, ticket in_progress kalır (admin/operatör yeniden atayabilir)
+  // Cannot fix: set station to inactive, ticket stays in_progress (admin/operator can reassign)
   const handleCannotFixStation = async (stationId) => {
     setActionLoading(true);
     try {
@@ -124,11 +124,11 @@ export default function TechnicianView() {
         i => String(i.station_id) === String(stationId) && i.status === 'in_progress'
       );
       if (issue) {
-        await cannotFixIssue(issue.id); // ticket open'a döner, istasyon inactive olur
+        await cannotFixIssue(issue.id); // ticket returns to open, station becomes inactive
       } else {
         await updateStation(stationId, { status: 'inactive' });
       }
-      showMsg('İstasyon çevrimdışı yapıldı. Arıza kaydı yeniden açıldı, operatör yeniden atama yapabilir.', 'error');
+      showMsg('Station taken offline. Issue record reopened, operator can reassign.', 'error');
       setSelectedStation(null);
       load();
     } catch (e) { showMsg(e.message, 'error'); }
@@ -149,11 +149,11 @@ export default function TechnicianView() {
     <div className="flex flex-col h-full">
       {/* Header bar */}
       <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-wrap items-center gap-4">
-        <h2 className="text-xl font-bold text-gray-900">Teknisyen Görünümü</h2>
+        <h2 className="text-xl font-bold text-gray-900">Technician View</h2>
         <div className="flex flex-wrap gap-3 ml-auto">
           {maintenanceStations.length > 0 && (
             <span className="flex items-center gap-1.5 text-sm text-yellow-400">
-              <span className="w-2 h-2 rounded-full bg-yellow-400" /> {maintenanceStations.length} bakımda
+              <span className="w-2 h-2 rounded-full bg-yellow-400" /> {maintenanceStations.length} under maintenance
             </span>
           )}
           {overstayCount > 0 && (
@@ -162,13 +162,13 @@ export default function TechnicianView() {
             </span>
           )}
           <span className="flex items-center gap-1.5 text-sm text-red-400">
-            <span className="w-2 h-2 rounded-full bg-red-400" /> {offlineCount} çevrimdışı
+            <span className="w-2 h-2 rounded-full bg-red-400" /> {offlineCount} offline
           </span>
           <span className="flex items-center gap-1.5 text-sm text-blue-400">
-            <span className="w-2 h-2 rounded-full bg-blue-400" /> {occupiedCount} dolu
+            <span className="w-2 h-2 rounded-full bg-blue-400" /> {occupiedCount} occupied
           </span>
           <span className="flex items-center gap-1.5 text-sm text-blue-400">
-            <span className="w-2 h-2 rounded-full bg-blue-400" /> {allChargers.filter(c => c.status === 'available').length} müsait
+            <span className="w-2 h-2 rounded-full bg-blue-400" /> {allChargers.filter(c => c.status === 'available').length} available
           </span>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function TechnicianView() {
                   <p style={{ fontWeight: 600 }}>{selected.station_name}</p>
                   <p style={{ fontSize: 12, fontFamily: 'monospace', marginTop: 4 }}>{selected.charger_code}</p>
                   <p style={{ fontSize: 12, marginTop: 2 }}>
-                    Durum: <span style={{ color: STATUS_COLOR[selected.status] || '#9ca3af' }}>{selected.status}</span>
+                    Status: <span style={{ color: STATUS_COLOR[selected.status] || '#9ca3af' }}>{selected.status}</span>
                   </p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selected.type} · {selected.power} kW · {selected.connector_type}</p>
                   {selected.status !== 'available' && (
@@ -236,7 +236,7 @@ export default function TechnicianView() {
                       onClick={() => handleFixCharger(selected.id, selected.charger_code, selected.status)}
                       style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                     >
-                      {actionLoading ? '…' : ' Onarıldı – Müsait İşaretle'}
+                      {actionLoading ? '…' : ' Fixed – Mark as Available'}
                     </button>
                   )}
                 </div>
@@ -252,11 +252,11 @@ export default function TechnicianView() {
                 <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 210 }}>
                   <p style={{ fontWeight: 600 }}>{selectedStation.name}</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selectedStation.address}</p>
-                  <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}> Bakımda</p>
+                  <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}> Under Maintenance</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                    {(selectedStation.chargers || []).length} şarjcı
+                    {(selectedStation.chargers || []).length} chargers
                   </p>
-                  {/* Atanmış açık ticket bilgisi */}
+                  {/* Assigned open ticket info */}
                   {(() => {
                     const issue = issues.find(
                       i => String(i.station_id) === String(selectedStation.id) && i.status === 'in_progress'
@@ -267,21 +267,21 @@ export default function TechnicianView() {
                       </p>
                     ) : null;
                   })()}
-                  {/* Onarıldı butonu */}
+                  {/* Fixed button */}
                   <button
                     disabled={actionLoading}
                     onClick={() => handleFixStation(selectedStation.id)}
                     style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                   >
-                    {actionLoading ? '…' : ' Onarıldı – Aktif Yap'}
+                    {actionLoading ? '…' : ' Fixed – Set Active'}
                   </button>
-                  {/* Onarılamaz butonu */}
+                  {/* Cannot fix button */}
                   <button
                     disabled={actionLoading}
                     onClick={() => handleCannotFixStation(selectedStation.id)}
                     style={{ marginTop: 6, width: '100%', background: actionLoading ? '#374151' : '#7f1d1d', color: '#fca5a5', border: '1px solid #991b1b', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                   >
-                    {actionLoading ? '…' : ' Onarılamaz – Çevrimdışı Yap'}
+                    {actionLoading ? '…' : ' Cannot Fix – Take Offline'}
                   </button>
                 </div>
               </InfoWindowF>
@@ -289,7 +289,7 @@ export default function TechnicianView() {
           </GoogleMap>
         ) : (
           <div className="flex items-center justify-center h-64 text-gray-500">
-            Harita yükleniyor...
+            Loading map...
           </div>
         )}
       </div>
@@ -301,7 +301,7 @@ export default function TechnicianView() {
           {/* Maintenance stations */}
           {maintenanceStations.length > 0 && (
             <div className="p-4">
-              <h4 className="text-sm font-semibold text-yellow-400 mb-2"> Bakımdaki İstasyonlar</h4>
+              <h4 className="text-sm font-semibold text-yellow-400 mb-2"> Stations Under Maintenance</h4>
               <div className="flex flex-wrap gap-2">
                 {maintenanceStations.map(s => (
                   <button
@@ -324,7 +324,7 @@ export default function TechnicianView() {
           {/* Overstay chargers */}
           {overstayCount > 0 && (
             <div className="p-4">
-              <h4 className="text-sm font-semibold text-orange-400 mb-2"> Overstay Şarjcılar</h4>
+              <h4 className="text-sm font-semibold text-orange-400 mb-2"> Overstay Chargers</h4>
               <div className="flex flex-wrap gap-2">
                 {allChargers.filter(c => c.status === 'overstay').map(c => (
                   <button
@@ -342,7 +342,7 @@ export default function TechnicianView() {
           {/* Offline chargers */}
           {offlineCount > 0 && (
             <div className="p-4">
-              <h4 className="text-sm font-semibold text-red-400 mb-2">Çevrimdışı Şarjcılar</h4>
+              <h4 className="text-sm font-semibold text-red-400 mb-2">Offline Chargers</h4>
               <div className="flex flex-wrap gap-2">
                 {allChargers.filter(c => c.status === 'offline').map(c => (
                   <button

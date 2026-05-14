@@ -3,13 +3,13 @@ import { createPortal } from 'react-dom';
 import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 
 const TYPE_BADGE = {
-  wallet_low:            { label: 'Cuzdan',     cls: 'bg-yellow-100 text-yellow-700' },
-  station_malfunction:   { label: 'Ariza',      cls: 'bg-red-100 text-red-700'      },
-  station_issue_reported:{ label: 'Sorun',      cls: 'bg-orange-100 text-orange-700' },
-  reservation_confirmed: { label: 'Rezervasyon',cls: 'bg-blue-100 text-blue-700'    },
-  reservation_cancelled: { label: 'Iptal',      cls: 'bg-gray-100 text-gray-600'    },
-  session_started:       { label: 'Sarj',       cls: 'bg-green-100 text-green-700'  },
-  session_completed:     { label: 'Tamamlandi', cls: 'bg-green-100 text-green-700'  },
+  wallet_low:            { label: 'Wallet',       cls: 'bg-yellow-100 text-yellow-700' },
+  station_malfunction:   { label: 'Issue',        cls: 'bg-red-100 text-red-700'      },
+  station_issue_reported:{ label: 'Problem',      cls: 'bg-orange-100 text-orange-700' },
+  reservation_confirmed: { label: 'Reservation',  cls: 'bg-blue-100 text-blue-700'    },
+  reservation_cancelled: { label: 'Cancelled',    cls: 'bg-gray-100 text-gray-600'    },
+  session_started:       { label: 'Charging',     cls: 'bg-green-100 text-green-700'  },
+  session_completed:     { label: 'Completed',    cls: 'bg-green-100 text-green-700'  },
 };
 
 const BellIcon = ({ className = 'w-5 h-5' }) => (
@@ -69,7 +69,7 @@ export default function NotificationBell() {
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <BellIcon className="w-5 h-5 text-gray-600" />
-            <span className="font-semibold text-gray-900 text-sm">Bildirimler</span>
+            <span className="font-semibold text-gray-900 text-sm">Notifications</span>
             {data.unread_count > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
                 {data.unread_count}
@@ -82,7 +82,7 @@ export default function NotificationBell() {
                 onClick={handleReadAll}
                 className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
-                Tumunu okundu isaretle
+                Mark all as read
               </button>
             )}
             <button
@@ -101,7 +101,7 @@ export default function NotificationBell() {
               <div className="flex justify-center mb-3">
                 <BellOffIcon />
               </div>
-              <p className="text-gray-400 text-sm">Bildirim yok</p>
+              <p className="text-gray-400 text-sm">No notifications</p>
             </div>
           ) : (
             data.notifications.map(n => {
@@ -150,7 +150,7 @@ export default function NotificationBell() {
       <button
         onClick={() => setOpen(o => !o)}
         className="relative p-2 rounded-lg hover:bg-gray-800 transition-colors"
-        title="Bildirimler"
+        title="Notifications"
       >
         <BellIcon className="w-5 h-5 text-gray-400" />
         {data.unread_count > 0 && (

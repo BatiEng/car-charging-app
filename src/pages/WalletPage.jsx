@@ -4,8 +4,8 @@ import { getWallet, topUpWallet } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const TXN_TYPE = {
-  credit: { label: 'Gelir', color: 'text-blue-400', sign: '+' },
-  debit:  { label: 'Gider', color: 'text-red-400',     sign: '-' },
+  credit: { label: 'Income', color: 'text-blue-400', sign: '+' },
+  debit:  { label: 'Expense', color: 'text-red-400',     sign: '-' },
 };
 
 //  Input formatters 
@@ -37,7 +37,7 @@ export default function WalletPage() {
   const load = () => getWallet().then(setWallet).catch(() => {});
   useEffect(() => { load(); }, []);
 
-  // Son kullanma tarihi geçmiş mi kontrolü
+  // Check if expiry date is past
   const isExpiryValid = (expiry) => {
     const parts = expiry.split('/');
     if (parts.length !== 2) return false;
@@ -46,7 +46,7 @@ export default function WalletPage() {
     if (month < 1 || month > 12) return false;
     const now = new Date();
     const exp = new Date(year, month - 1, 1);
-    // Ayın son günü de geçerli sayılsın — sadece ayın başı ile kıyasla
+    // Last day of month also counts as valid — compare only start of month
     return exp >= new Date(now.getFullYear(), now.getMonth(), 1);
   };
 
@@ -54,14 +54,14 @@ export default function WalletPage() {
     e.preventDefault();
     setError(''); setSuccess('');
 
-    // CVV 3 hane olmalı
+    // CVV must be 3 digits
     if (form.cvv.length !== 3) {
-      setError('CVV 3 haneli olmalıdır.');
+      setError('CVV must be 3 digits.');
       return;
     }
-    // Son kullanma tarihi kontrolü
+    // Expiry date check
     if (!isExpiryValid(form.expiry)) {
-      setError('Geçersiz veya süresi dolmuş son kullanma tarihi.');
+      setError('Invalid or expired expiry date.');
       return;
     }
 
@@ -69,7 +69,7 @@ export default function WalletPage() {
     try {
       await new Promise(r => setTimeout(r, 2000)); // fake bank wait
       const res = await topUpWallet(parseFloat(form.amount), form.card_number.replace(/\s/g, ''));
-      setSuccess(`${res.added} TL başarıyla yüklendi! Yeni bakiye: ${res.balance} TL`);
+      setSuccess(`${res.added} TL successfully added! New balance: ${res.balance} TL`);
       setForm({ amount: '', card_number: '', cvv: '', expiry: '' });
       setShowTopUp(false);
       load();
@@ -81,13 +81,13 @@ export default function WalletPage() {
     }
   };
 
-  //  "Bankadan haber bekleniyor" loading overlay 
+  //  "Waiting for bank response" loading overlay
   const loadingOverlay = loading && createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999]">
       <div className="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-2xl max-w-xs w-full mx-4">
         <div className="text-5xl mb-4 animate-bounce"></div>
-        <p className="text-gray-900 font-semibold text-lg mb-1">Bankadan haber bekleniyor…</p>
-        <p className="text-gray-500 text-sm mb-5">Lütfen bekleyin, ödemeniz işleniyor.</p>
+        <p className="text-gray-900 font-semibold text-lg mb-1">Waiting for bank response…</p>
+        <p className="text-gray-500 text-sm mb-5">Please wait, your payment is being processed.</p>
         <div className="flex justify-center gap-1.5">
           {[0,1,2,3].map(i => (
             <div key={i} className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
@@ -109,7 +109,7 @@ export default function WalletPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-            <span></span> Bakiye Yükle
+            <span></span> Top Up Wallet
           </h3>
           <button onClick={() => setShowTopUp(false)} disabled={loading}
             className="text-gray-500 hover:text-white text-xl disabled:opacity-30"></button>
@@ -118,7 +118,7 @@ export default function WalletPage() {
         <form onSubmit={handleTopUp} className="p-5 space-y-4">
           {/* Card number */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Kart Numarası</label>
+            <label className="block text-xs text-gray-500 mb-1">Card Number</label>
             <input
               type="text"
               inputMode="numeric"
@@ -133,7 +133,7 @@ export default function WalletPage() {
           {/* Expiry + CVV */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Son Kullanma</label>
+              <label className="block text-xs text-gray-500 mb-1">Expiry Date</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -144,7 +144,7 @@ export default function WalletPage() {
                 }}
                 required maxLength={5}
                 className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-500"
-                placeholder="AA/YY"
+                placeholder="MM/YY"
               />
             </div>
             <div>
@@ -163,7 +163,7 @@ export default function WalletPage() {
 
           {/* Amount */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Yüklenecek Miktar (TL)</label>
+            <label className="block text-xs text-gray-500 mb-1">Amount to Add (TL)</label>
             <input
               type="number"
               value={form.amount}
@@ -181,14 +181,14 @@ export default function WalletPage() {
           <div className="flex gap-3 pt-1">
             <button type="submit" disabled={loading}
               className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors">
-              Ödemeyi Onayla
+              Confirm Payment
             </button>
             <button type="button" onClick={() => setShowTopUp(false)} disabled={loading}
               className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-white font-semibold py-2.5 rounded-lg transition-colors">
-              İptal
+              Cancel
             </button>
           </div>
-          <p className="text-xs text-gray-400 text-center">Bu ödeme simülasyondur — kart bilgileri doğrulanmaz</p>
+          <p className="text-xs text-gray-400 text-center">This payment is a simulation — card details are not verified</p>
         </form>
       </div>
     </div>,
@@ -200,23 +200,23 @@ export default function WalletPage() {
       {loadingOverlay}
       {topUpModal}
 
-      <h2 className="text-2xl font-bold text-gray-900">Cüzdan</h2>
+      <h2 className="text-2xl font-bold text-gray-900">Wallet</h2>
 
       {/* Balance card */}
       <div className="bg-gradient-to-br from-blue-700 to-teal-800 rounded-lg p-6 shadow-xl">
-        <p className="text-blue-200 text-sm mb-1">Mevcut Bakiye</p>
+        <p className="text-blue-200 text-sm mb-1">Current Balance</p>
         <p className="text-4xl font-bold text-gray-900">
           {wallet.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
           <span className="text-xl ml-1">TL</span>
         </p>
         {wallet.balance < 200 && (
-          <p className="mt-2 text-yellow-300 text-sm"> Bakiyeniz 200 TL altında – lütfen yükleyin</p>
+          <p className="mt-2 text-yellow-300 text-sm"> Your balance is below 200 TL – please top up</p>
         )}
         <button
           onClick={() => { setShowTopUp(true); setError(''); setSuccess(''); }}
           className="mt-4 bg-white/20 hover:bg-white/30 text-gray-900 font-semibold px-6 py-2 rounded-lg transition-colors text-sm"
         >
-          + Bakiye Yükle
+          + Top Up Wallet
         </button>
       </div>
 
@@ -229,10 +229,10 @@ export default function WalletPage() {
       {/* Transaction history */}
       <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
         <div className="px-5 py-4 border-b border-gray-200">
-          <h3 className="text-gray-900 font-semibold">İşlem Geçmişi</h3>
+          <h3 className="text-gray-900 font-semibold">Transaction History</h3>
         </div>
         {wallet.transactions.length === 0 ? (
-          <p className="text-center text-gray-500 text-sm py-8">Henüz işlem yok</p>
+          <p className="text-center text-gray-500 text-sm py-8">No transactions yet</p>
         ) : (
           <div className="divide-y divide-gray-200">
             {wallet.transactions.map(tx => {
@@ -249,7 +249,7 @@ export default function WalletPage() {
                     <p className={`font-semibold text-sm ${t.color}`}>
                       {t.sign}{Math.abs(tx.amount).toFixed(2)} TL
                     </p>
-                    <p className="text-xs text-gray-400">Bakiye: {parseFloat(tx.balance_after).toFixed(2)} TL</p>
+                    <p className="text-xs text-gray-400">Balance: {parseFloat(tx.balance_after).toFixed(2)} TL</p>
                   </div>
                 </div>
               );

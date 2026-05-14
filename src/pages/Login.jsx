@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { register as apiRegister } from '../services/api';
 
 const DEMO_ACCOUNTS = [
-  { role: 'admin',      label: 'Yonetici',  badge: 'bg-purple-100 text-purple-700', email: 'admin@ev.com',  password: 'Admin123!'  },
-  { role: 'operator',   label: 'Operator',  badge: 'bg-blue-100 text-blue-700',     email: 'op1@ev.com',    password: 'Operator1!' },
-  { role: 'technician', label: 'Teknisyen', badge: 'bg-amber-100 text-amber-700',   email: 'tech@ev.com',   password: 'Tech123!'   },
-  { role: 'driver',     label: 'Surucu',    badge: 'bg-green-100 text-green-700',   email: 'driver@ev.com', password: 'Driver123!' },
+  { role: 'admin',      label: 'Admin',      badge: 'bg-purple-100 text-purple-700', email: 'admin@ev.com',  password: 'Admin123!'  },
+  { role: 'operator',   label: 'Operator',   badge: 'bg-blue-100 text-blue-700',     email: 'op1@ev.com',    password: 'Operator1!' },
+  { role: 'technician', label: 'Technician', badge: 'bg-amber-100 text-amber-700',   email: 'tech@ev.com',   password: 'Tech123!'   },
+  { role: 'driver',     label: 'Driver',     badge: 'bg-green-100 text-green-700',   email: 'driver@ev.com', password: 'Driver123!' },
 ];
 
 const BoltIcon = () => (
@@ -69,15 +69,15 @@ export default function Login() {
             <BoltIcon />
           </div>
           <h1 className="text-xl font-bold text-white">EV Charge Network</h1>
-          <p className="text-blue-100 text-sm mt-1">Izmir Sarj Istasyonu Yonetimi</p>
+          <p className="text-blue-100 text-sm mt-1">Izmir Charging Station Management</p>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b border-gray-200 bg-white">
           {[
-            { key: 'demo',     label: 'Demo Giris' },
-            { key: 'login',    label: 'Giris Yap' },
-            { key: 'register', label: 'Kayit Ol' },
+            { key: 'demo',     label: 'Demo Login' },
+            { key: 'login',    label: 'Sign In' },
+            { key: 'register', label: 'Register' },
           ].map(t => (
             <button
               key={t.key}
@@ -97,7 +97,7 @@ export default function Login() {
         {tab === 'demo' && (
           <div className="p-6">
             <p className="text-gray-500 text-xs text-center mb-4">
-              Rol secin ve otomatik giris yapin
+              Select a role and sign in automatically
             </p>
 
             <div className="grid grid-cols-2 gap-3">
@@ -118,7 +118,7 @@ export default function Login() {
                   </span>
                   <span className="text-xs text-gray-400 font-mono truncate w-full text-center">{acc.email}</span>
                   {selected === acc.role && loading && (
-                    <span className="text-[10px] text-blue-500 animate-pulse">Giris yapiliyor...</span>
+                    <span className="text-[10px] text-blue-500 animate-pulse">Signing in...</span>
                   )}
                 </button>
               ))}
@@ -136,18 +136,18 @@ export default function Login() {
         {tab === 'login' && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">E-posta</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={set('email')}
                 required
                 className={inputClass}
-                placeholder="ornek@email.com"
+                placeholder="example@email.com"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Sifre</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
               <input
                 type="password"
                 value={form.password}
@@ -168,7 +168,7 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? 'Lutfen bekleyin...' : 'Giris Yap'}
+              {loading ? 'Please wait...' : 'Sign In'}
             </button>
           </form>
         )}
@@ -177,29 +177,29 @@ export default function Login() {
         {tab === 'register' && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Ad Soyad</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Full Name</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={set('name')}
                 required
                 className={inputClass}
-                placeholder="Adiniz Soyadiniz"
+                placeholder="Your Full Name"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">E-posta</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Email</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={set('email')}
                 required
                 className={inputClass}
-                placeholder="ornek@email.com"
+                placeholder="example@email.com"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">Sifre</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Password</label>
               <input
                 type="password"
                 value={form.password}
@@ -220,7 +220,7 @@ export default function Login() {
               disabled={loading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? 'Lutfen bekleyin...' : 'Kayit Ol'}
+              {loading ? 'Please wait...' : 'Register'}
             </button>
           </form>
         )}

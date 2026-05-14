@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { getDemoTime, addDemoTime, resetDemoTime } from '../services/api';
 
 const PRESETS = [
-  { label: '+15dk',  seconds: 15 * 60 },
-  { label: '+30dk',  seconds: 30 * 60 },
-  { label: '+59dk',  seconds: 59 * 60 },
-  { label: '+1sa',   seconds: 60 * 60 },
-  { label: '+2sa',   seconds: 2 * 60 * 60 },
-  { label: '+6sa',   seconds: 6 * 60 * 60 },
-  { label: '+12sa',  seconds: 12 * 60 * 60 },
-  { label: '+1gün',  seconds: 24 * 60 * 60 },
+  { label: '+15min',  seconds: 15 * 60 },
+  { label: '+30min',  seconds: 30 * 60 },
+  { label: '+59min',  seconds: 59 * 60 },
+  { label: '+1hr',    seconds: 60 * 60 },
+  { label: '+2hr',    seconds: 2 * 60 * 60 },
+  { label: '+6hr',    seconds: 6 * 60 * 60 },
+  { label: '+12hr',   seconds: 12 * 60 * 60 },
+  { label: '+1day',   seconds: 24 * 60 * 60 },
 ];
 
 export default function DemoTimeWidget() {
@@ -40,9 +40,9 @@ export default function DemoTimeWidget() {
       const d = await addDemoTime(seconds);
       setDemoTime(d.demo_time_tr);
       setOffset(d.offset_seconds);
-      setFeedback(' Güncellendi');
+      setFeedback(' Updated');
     } catch (e) {
-      setFeedback('Hata: ' + e.message);
+      setFeedback('Error: ' + e.message);
     } finally {
       setLoading(false);
       setTimeout(() => setFeedback(''), 2000);
@@ -56,9 +56,9 @@ export default function DemoTimeWidget() {
       const d = await resetDemoTime();
       setDemoTime(d.demo_time_tr);
       setOffset(0);
-      setFeedback(' Sıfırlandı');
+      setFeedback(' Reset');
     } catch (e) {
-      setFeedback('Hata: ' + e.message);
+      setFeedback('Error: ' + e.message);
     } finally {
       setLoading(false);
       setTimeout(() => setFeedback(''), 2000);
@@ -74,13 +74,13 @@ export default function DemoTimeWidget() {
         <button
           onClick={() => setOpen(true)}
           className="flex items-center gap-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-mono px-3 py-1.5 rounded-full shadow-lg transition-colors"
-          title="Demo zaman kontrolü"
+          title="Demo time control"
         >
           <span></span>
           <span>{demoTime || '…'}</span>
           {offset !== 0 && (
             <span className="bg-indigo-500 px-1.5 py-0.5 rounded-full text-[10px]">
-              +{offsetHours}sa
+              +{offsetHours}hr
             </span>
           )}
         </button>
@@ -92,11 +92,11 @@ export default function DemoTimeWidget() {
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Demo Saati</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">Demo Time</p>
               <p className="text-gray-900 font-mono text-sm font-semibold">{demoTime || '…'}</p>
               {offset !== 0 && (
                 <p className="text-indigo-400 text-[11px] mt-0.5">
-                  Gerçek saatten +{offsetHours} saat ilerde
+                  +{offsetHours} hours ahead of real time
                 </p>
               )}
             </div>
@@ -126,7 +126,7 @@ export default function DemoTimeWidget() {
             disabled={loading || offset === 0}
             className="w-full bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white text-xs py-1.5 rounded-lg transition-colors"
           >
-             Gerçek Saate Döndür
+             Reset to Real Time
           </button>
 
           {/* Feedback */}
