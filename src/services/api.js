@@ -1,11 +1,11 @@
 const BASE = import.meta.env.VITE_API_URL || '/api';
 
-// ── Token helpers ─────────────────────────────────────────────
+//  Token helpers 
 export const getToken  = ()        => localStorage.getItem('ev_token');
 export const setToken  = (t)       => localStorage.setItem('ev_token', t);
 export const clearToken = ()       => localStorage.removeItem('ev_token');
 
-// ── Core fetch wrapper ────────────────────────────────────────
+//  Core fetch wrapper 
 async function request(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -20,7 +20,7 @@ async function request(path, options = {}) {
   return data;
 }
 
-// ── Auth ──────────────────────────────────────────────────────
+//  Auth 
 export const login = async (email, password) => {
   const data = await request('auth.php', {
     method: 'POST',
@@ -46,7 +46,7 @@ export const logout = () => {
 
 export const me = () => request('auth.php?action=me');
 
-// ── Stations ──────────────────────────────────────────────────
+//  Stations 
 export const getStations      = ()           => request('stations.php');
 export const getMyTopStation  = ()           => request('stations.php?action=my_top');
 export const getMyFavorites   = ()           => request('stations.php?action=my_favorites');
@@ -59,7 +59,7 @@ export const createStation = (data) =>
 export const updateStation = (id, data) =>
   request(`stations.php?id=${id}`, { method: 'PUT', body: JSON.stringify(data) });
 
-// ── Chargers ──────────────────────────────────────────────────
+//  Chargers 
 export const createCharger = (data) =>
   request('chargers.php', { method: 'POST', body: JSON.stringify(data) });
 
@@ -74,7 +74,7 @@ export const patchCharger = (id, status) =>
 
 export const getCharger = (id) => request(`chargers.php?id=${id}`);
 
-// ── Vehicles ──────────────────────────────────────────────────
+//  Vehicles 
 export const getVehicles = () => request('vehicles.php');
 
 export const addVehicle = (data) =>
@@ -86,13 +86,13 @@ export const updateVehicle = (id, data) =>
 export const deleteVehicle = (id) =>
   request(`vehicles.php?id=${id}`, { method: 'DELETE' });
 
-// ── Wallet ────────────────────────────────────────────────────
+//  Wallet 
 export const getWallet = () => request('wallet.php');
 
 export const topUpWallet = (amount, card_number) =>
   request('wallet.php', { method: 'POST', body: JSON.stringify({ amount, card_number }) });
 
-// ── Reservations ──────────────────────────────────────────────
+//  Reservations 
 export const getReservations = () => request('reservations.php');
 
 export const getChargerAvailability = (charger_id, date) =>
@@ -104,7 +104,7 @@ export const createReservation = (data) =>
 export const cancelReservation = (id) =>
   request(`reservations.php?id=${id}`, { method: 'DELETE' });
 
-// ── Charging Sessions ─────────────────────────────────────────
+//  Charging Sessions 
 export const getSessions = () => request('charging_sessions.php');
 
 export const startSession = (reservation_id, vehicle_pin) =>
@@ -122,7 +122,7 @@ export const checkExtension = (session_id) =>
 export const extendSession = (session_id) =>
   request('charging_sessions.php?action=extend', { method: 'POST', body: JSON.stringify({ session_id }) });
 
-// ── Notifications ─────────────────────────────────────────────
+//  Notifications 
 export const getNotifications = () => request('notifications.php');
 
 export const markNotificationRead = (id) =>
@@ -131,7 +131,7 @@ export const markNotificationRead = (id) =>
 export const markAllNotificationsRead = () =>
   request('notifications.php', { method: 'PUT', body: JSON.stringify({ action: 'mark_all_read' }) });
 
-// ── Admin ─────────────────────────────────────────────────────
+//  Admin 
 export const adminGet = (type) => request(`admin.php?type=${type}`);
 
 export const adminUpdateUser = (data) =>
@@ -148,24 +148,24 @@ export const adminDeleteUser = (id) =>
 
 export const getStationUsage = () => request('admin.php?type=station_usage');
 
-// ── Station Issues ────────────────────────────────────────────
+//  Station Issues 
 export const reportIssue    = (data)                          => request('issues.php', { method: 'POST', body: JSON.stringify(data) });
 export const getMyIssues    = ()                              => request('issues.php');
 export const patchIssue      = (id, status, technicianId=null, maintenanceStart=null, maintenanceEnd=null) => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status, ...(technicianId ? { technician_id: technicianId } : {}), ...(maintenanceStart ? { maintenance_start: maintenanceStart } : {}), ...(maintenanceEnd ? { maintenance_end: maintenanceEnd } : {}) }) });
 export const cannotFixIssue  = (id)                           => request(`issues.php?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cannot_fix' }) });
 export const getTechnicians  = ()                             => request('technicians.php');
 
-// ── Waiting Queue ─────────────────────────────────────────────
+//  Waiting Queue 
 export const getMyQueue  = ()                              => request('queue.php');
 export const joinQueue   = (station_id, connector_type)   => request('queue.php', { method: 'POST', body: JSON.stringify({ station_id, connector_type }) });
 export const leaveQueue  = (station_id)                   => request(`queue.php?station_id=${station_id}`, { method: 'DELETE' });
 
-// ── Demo Time Control (admin only) ───────────────────────────
+//  Demo Time Control (admin only) 
 export const getDemoTime   = ()              => request('demo.php');
 export const addDemoTime   = (add_seconds)   => request('demo.php', { method: 'POST', body: JSON.stringify({ add_seconds }) });
 export const setDemoOffset = (set_seconds)   => request('demo.php', { method: 'POST', body: JSON.stringify({ set_seconds }) });
 export const resetDemoTime = ()              => request('demo.php', { method: 'DELETE' });
 
-// ── Kullanıcı kendi hesabını sil ─────────────────────────────
+//  Kullanıcı kendi hesabını sil 
 export const deleteMyAccount = () =>
   request('auth.php?action=delete', { method: 'DELETE' });

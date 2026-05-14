@@ -10,11 +10,11 @@ import { useAuth } from '../context/AuthContext';
 import { MAP_CENTER, CONNECTORS } from '../constants';
 
 const STATUS_BADGE = {
-  available:   'bg-emerald-900/40 text-emerald-300 border border-emerald-800',
+  available:   'bg-blue-900/40 text-blue-300 border border-blue-800',
   occupied:    'bg-blue-900/40 text-blue-300 border border-blue-800',
   offline:     'bg-red-900/40 text-red-300 border border-red-800',
-  active:      'bg-emerald-900/40 text-emerald-300 border border-emerald-800',
-  inactive:    'bg-slate-700 text-slate-300 border border-slate-600',
+  active:      'bg-blue-900/40 text-blue-300 border border-blue-800',
+  inactive:    'bg-gray-100 text-gray-700 border border-gray-300',
   maintenance: 'bg-orange-900/40 text-orange-300 border border-orange-800',
 };
 const STATUS_DOT = {
@@ -25,14 +25,14 @@ const STATUS_DOT = {
   inactive:    '#64748b',
   maintenance: '#fb923c',
 };
-const STATUS_LABELS         = { active:'✅ Aktif', inactive:'⛔ Pasif', maintenance:'🔧 Bakımda' };
+const STATUS_LABELS         = { active:' Aktif', inactive:' Pasif', maintenance:' Bakımda' };
 const CHARGER_STATUS_LABELS = { available:'Müsait', occupied:'Dolu', offline:'Çevrimdışı' };
 const STATION_STATUSES      = ['active', 'inactive', 'maintenance'];
 const MINI_MAP_STYLE        = { width:'100%', height:'260px' };
 const MINI_MAP_OPTIONS      = { disableDefaultUI:true, clickableIcons:false };
 const EMPTY_CHARGER         = { charger_code:'', type:'AC', power:'', connector_type:'', price_per_kwh:'3.50' };
 
-// ── ChargerList ───────────────────────────────────────────────
+//  ChargerList 
 function ChargerList({ chargers, onChange, onDelete }) {
   const update = (idx, field, val) =>
     onChange(chargers.map((c, i) => i === idx ? { ...c, [field]: val } : c));
@@ -41,48 +41,48 @@ function ChargerList({ chargers, onChange, onDelete }) {
     <div className="space-y-3">
       {chargers.map((ch, idx) => (
         <div key={ch.id ?? `new-${idx}`}
-          className="bg-slate-700/50 border border-slate-600 rounded-xl p-3 space-y-2">
+          className="bg-gray-50 border border-gray-300 rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-gray-500 font-medium">
               {ch._new ? `Yeni Şarjcı #${idx + 1}` : `Şarjcı #${idx + 1} (ID: ${ch.id})`}
             </span>
             <button type="button" onClick={() => onDelete(idx, ch)}
-              className="text-xs text-red-400 hover:text-red-300">✕ Kaldır</button>
+              className="text-xs text-red-400 hover:text-red-300"> Kaldır</button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] text-slate-500">Kod *</label>
+              <label className="text-[10px] text-gray-400">Kod *</label>
               <input value={ch.charger_code}
                 onChange={e => update(idx, 'charger_code', e.target.value.toUpperCase())}
                 placeholder="örn. ST1-01"
-                className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"/>
+                className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"/>
             </div>
             <div>
-              <label className="text-[10px] text-slate-500">Tip</label>
+              <label className="text-[10px] text-gray-400">Tip</label>
               <select value={ch.type} onChange={e => update(idx, 'type', e.target.value)}
-                className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs">
+                className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs">
                 <option value="AC">AC</option>
                 <option value="DC">DC</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] text-slate-500">Güç (kW) *</label>
+              <label className="text-[10px] text-gray-400">Güç (kW) *</label>
               <input type="number" min="1" value={ch.power}
                 onChange={e => update(idx, 'power', e.target.value)}
                 placeholder="22"
-                className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"/>
+                className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"/>
             </div>
             <div>
-              <label className="text-[10px] text-slate-500">TL/kWh</label>
+              <label className="text-[10px] text-gray-400">TL/kWh</label>
               <input type="number" min="0" step="0.01" value={ch.price_per_kwh}
                 onChange={e => update(idx, 'price_per_kwh', e.target.value)}
-                className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"/>
+                className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"/>
             </div>
           </div>
           <div>
-            <label className="text-[10px] text-slate-500">Konektör *</label>
+            <label className="text-[10px] text-gray-400">Konektör *</label>
             <select value={ch.connector_type} onChange={e => update(idx, 'connector_type', e.target.value)}
-              className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs">
+              className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs">
               <option value="">Seçin…</option>
               {CONNECTORS.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -93,7 +93,7 @@ function ChargerList({ chargers, onChange, onDelete }) {
   );
 }
 
-// ── Station Edit Modal ────────────────────────────────────────
+//  Station Edit Modal 
 function StationEditModal({ station, isLoaded, onClose, onSaved }) {
   const [form, setForm] = useState({
     id: station.id, name: station.name, address: station.address,
@@ -134,71 +134,71 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-4xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>
-            <h3 className="font-semibold text-white">İstasyonu Düzenle</h3>
-            <p className="text-slate-400 text-xs mt-0.5">{station.name}</p>
+            <h3 className="font-semibold text-gray-900">İstasyonu Düzenle</h3>
+            <p className="text-gray-500 text-xs mt-0.5">{station.name}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none"></button>
         </div>
         <div className="p-5 overflow-y-auto max-h-[85vh]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4 overflow-y-auto max-h-[70vh] pr-1">
               <div>
-                <label className="text-xs text-slate-400">İstasyon Adı *</label>
+                <label className="text-xs text-gray-500">İstasyon Adı *</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"/>
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Adres *</label>
+                <label className="text-xs text-gray-500">Adres *</label>
                 <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"/>
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"/>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Durum</label>
+                <label className="text-xs text-gray-500">Durum</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm">
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm">
                   {STATION_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-400">Enlem</label>
+                  <label className="text-xs text-gray-500">Enlem</label>
                   <input readOnly value={form.lat ?? ''} placeholder="Haritadan seç"
-                    className="w-full mt-1 bg-slate-700/50 border border-slate-600 text-slate-300 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
+                    className="w-full mt-1 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400">Boylam</label>
+                  <label className="text-xs text-gray-500">Boylam</label>
                   <input readOnly value={form.lng ?? ''} placeholder="Haritadan seç"
-                    className="w-full mt-1 bg-slate-700/50 border border-slate-600 text-slate-300 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
+                    className="w-full mt-1 bg-gray-50 border border-gray-300 text-gray-700 rounded-lg px-3 py-2 text-sm cursor-not-allowed"/>
                 </div>
               </div>
-              <div className="border-t border-slate-700 pt-4">
+              <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold text-slate-300 uppercase tracking-wide">⚡ Şarj Üniteleri</p>
+                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide"> Şarj Üniteleri</p>
                   <button type="button" onClick={handleAddCharger}
-                    className="text-xs bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2 py-1 rounded-lg">+ Ekle</button>
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-blue-400 px-2 py-1 rounded-lg">+ Ekle</button>
                 </div>
                 <ChargerList chargers={chargers} onChange={setChargers} onDelete={handleDeleteCharger}/>
                 {chargers.length === 0 && (
-                  <p className="text-xs text-slate-500 text-center py-3">Şarjcı yok. "+ Ekle" ile ekleyin.</p>
+                  <p className="text-xs text-gray-400 text-center py-3">Şarjcı yok. "+ Ekle" ile ekleyin.</p>
                 )}
               </div>
               {err && <p className="text-red-400 text-sm">{err}</p>}
               <button onClick={handleSave} disabled={saving}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold">
-                {saving ? 'Kaydediliyor…' : '✓ Değişiklikleri Kaydet'}
+                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold">
+                {saving ? 'Kaydediliyor…' : ' Değişiklikleri Kaydet'}
               </button>
             </div>
             <div>
-              <p className="text-xs text-slate-400 mb-2">📍 Haritaya tıklayarak konumu güncelleyin</p>
+              <p className="text-xs text-gray-500 mb-2"> Haritaya tıklayarak konumu güncelleyin</p>
               {!isLoaded ? (
-                <div className="flex items-center justify-center bg-slate-700 rounded-xl h-64">
-                  <p className="text-slate-400 text-sm animate-pulse">Harita yükleniyor…</p>
+                <div className="flex items-center justify-center bg-gray-100 rounded-xl h-64">
+                  <p className="text-gray-500 text-sm animate-pulse">Harita yükleniyor…</p>
                 </div>
               ) : (
-                <div className="rounded-xl overflow-hidden border border-slate-600">
+                <div className="rounded-xl overflow-hidden border border-gray-300">
                   <GoogleMap
                     mapContainerStyle={MINI_MAP_STYLE}
                     center={(form.lat && form.lng) ? { lat: parseFloat(form.lat), lng: parseFloat(form.lng) } : MAP_CENTER}
@@ -209,7 +209,7 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
                 </div>
               )}
               {form.lat && (
-                <p className="text-xs text-emerald-400 mt-2">✓ {parseFloat(form.lat).toFixed(5)}, {parseFloat(form.lng).toFixed(5)}</p>
+                <p className="text-xs text-blue-400 mt-2"> {parseFloat(form.lat).toFixed(5)}, {parseFloat(form.lng).toFixed(5)}</p>
               )}
             </div>
           </div>
@@ -220,37 +220,37 @@ function StationEditModal({ station, isLoaded, onClose, onSaved }) {
   );
 }
 
-// ── Stat Card ─────────────────────────────────────────────────
+//  Stat Card 
 function StatCard({ icon, label, value, color = 'text-white' }) {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center gap-3">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
       <div className="text-2xl">{icon}</div>
       <div>
-        <p className="text-slate-400 text-xs">{label}</p>
+        <p className="text-gray-500 text-xs">{label}</p>
         <p className={`text-xl font-bold ${color}`}>{value}</p>
       </div>
     </div>
   );
 }
 
-// ── Charger Row ───────────────────────────────────────────────
+//  Charger Row 
 function ChargerRow({ ch, onStatusChange }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-700/40 border border-slate-700 rounded-xl px-4 py-3">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-gray-100/40 border border-gray-200 rounded-xl px-4 py-3">
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: STATUS_DOT[ch.status] || '#64748b' }}/>
-        <span className="font-mono text-sm text-white">{ch.charger_code}</span>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[ch.status] || 'bg-slate-700 text-slate-300'}`}>
+        <span className="font-mono text-sm text-gray-900">{ch.charger_code}</span>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[ch.status] || 'bg-gray-100 text-gray-700'}`}>
           {CHARGER_STATUS_LABELS[ch.status] ?? ch.status}
         </span>
       </div>
-      <p className="text-xs text-slate-400 shrink-0">
+      <p className="text-xs text-gray-500 shrink-0">
         {ch.type} · {ch.power} kW · {ch.connector_type} · {ch.price_per_kwh} TL/kWh
       </p>
       <div className="flex gap-2 shrink-0">
         {ch.status !== 'available' && (
           <button onClick={() => onStatusChange(ch.id, 'available')}
-            className="text-xs bg-emerald-800 hover:bg-emerald-700 text-emerald-200 px-3 py-1.5 rounded-lg transition-colors">✓ Müsait</button>
+            className="text-xs bg-blue-800 hover:bg-blue-700 text-blue-200 px-3 py-1.5 rounded-lg transition-colors"> Müsait</button>
         )}
         {ch.status !== 'offline' && (
           <button onClick={() => onStatusChange(ch.id, 'offline')}
@@ -266,12 +266,12 @@ function ChargerRow({ ch, onStatusChange }) {
 }
 
 const ISSUE_STATUS_STYLE = {
-  open:        { badge: 'bg-red-900/40 text-red-300 border border-red-800',        label: '🔴 Açık' },
-  in_progress: { badge: 'bg-yellow-900/40 text-yellow-300 border border-yellow-800', label: '🔧 Devam Ediyor' },
-  resolved:    { badge: 'bg-emerald-900/40 text-emerald-300 border border-emerald-800', label: '✅ Çözüldü' },
+  open:        { badge: 'bg-red-900/40 text-red-300 border border-red-800',        label: ' Açık' },
+  in_progress: { badge: 'bg-yellow-900/40 text-yellow-300 border border-yellow-800', label: ' Devam Ediyor' },
+  resolved:    { badge: 'bg-blue-900/40 text-blue-300 border border-blue-800', label: ' Çözüldü' },
 };
 
-// ── Main ──────────────────────────────────────────────────────
+//  Main 
 export default function OperatorDashboard({ isLoaded }) {
   const { user } = useAuth();
   const [stations,      setStations]      = useState([]);
@@ -327,8 +327,8 @@ export default function OperatorDashboard({ isLoaded }) {
       const res = await patchIssue(techModal.id, 'in_progress', parseInt(selectedTech), maintStart, maintEnd);
       const cancelledText = res.cancelled_count > 0 ? ` ${res.cancelled_count} rezervasyon iptal edildi, iadeler yapıldı.` : '';
       setMsg(techModal.chargerCode
-        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ✓${cancelledText}`
-        : `Teknisyen atandı, istasyon bakıma alındı ✓${cancelledText}`);
+        ? `Teknisyen atandı, ${techModal.chargerCode} şarjcısı offline alındı ${cancelledText}`
+        : `Teknisyen atandı, istasyon bakıma alındı ${cancelledText}`);
       setTechModal(null);
       setSelectedTech('');
       load();
@@ -357,44 +357,44 @@ export default function OperatorDashboard({ isLoaded }) {
       {/* Başlık */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">İstasyonlarım</h2>
-          <p className="text-slate-400 text-sm mt-0.5">{user?.name} · Operatör</p>
+          <h2 className="text-2xl font-bold text-gray-900">İstasyonlarım</h2>
+          <p className="text-gray-500 text-sm mt-0.5">{user?.name} · Operatör</p>
         </div>
         <button onClick={load}
-          className="flex items-center gap-1.5 text-sm bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg transition-colors">
-          🔄 Yenile
+          className="flex items-center gap-1.5 text-sm bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 px-3 py-2 rounded-lg transition-colors">
+           Yenile
         </button>
       </div>
 
       {/* Bildirim */}
       {msg && (
-        <div className="bg-emerald-900/40 border border-emerald-700 rounded-xl px-4 py-3 text-emerald-300 text-sm flex items-center justify-between">
+        <div className="bg-blue-900/40 border border-blue-700 rounded-xl px-4 py-3 text-blue-300 text-sm flex items-center justify-between">
           <span>{msg}</span>
-          <button onClick={() => setMsg('')} className="ml-3 text-emerald-400 hover:text-white">✕</button>
+          <button onClick={() => setMsg('')} className="ml-3 text-blue-400 hover:text-white"></button>
         </div>
       )}
 
       {/* İstatistik kartları */}
       {myStations.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon="🏪" label="İstasyon"      value={myStations.length} />
-          <StatCard icon="⚡" label="Toplam Şarjcı" value={totalChargers} />
-          <StatCard icon="✅" label="Müsait"        value={availableCount} color="text-emerald-400" />
-          <StatCard icon="🔴" label="Çevrimdışı"    value={offlineCount}   color="text-red-400" />
+          <StatCard icon="" label="İstasyon"      value={myStations.length} />
+          <StatCard icon="" label="Toplam Şarjcı" value={totalChargers} />
+          <StatCard icon="" label="Müsait"        value={availableCount} color="text-blue-400" />
+          <StatCard icon="" label="Çevrimdışı"    value={offlineCount}   color="text-red-400" />
         </div>
       )}
 
       {/* Yükleniyor */}
       {loading && (
-        <div className="text-center py-12 text-slate-400 animate-pulse">Yükleniyor…</div>
+        <div className="text-center py-12 text-gray-500 animate-pulse">Yükleniyor…</div>
       )}
 
       {/* Boş durum */}
       {!loading && myStations.length === 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-10 text-center">
-          <div className="text-5xl mb-4">🏪</div>
-          <p className="text-white font-semibold">Henüz atanmış istasyonunuz yok</p>
-          <p className="text-slate-400 text-sm mt-1">Bir yönetici tarafından size istasyon atanacaktır.</p>
+        <div className="bg-white border border-gray-200 rounded-lg p-10 text-center">
+          <div className="text-5xl mb-4"></div>
+          <p className="text-gray-900 font-semibold">Henüz atanmış istasyonunuz yok</p>
+          <p className="text-gray-500 text-sm mt-1">Bir yönetici tarafından size istasyon atanacaktır.</p>
         </div>
       )}
 
@@ -406,38 +406,38 @@ export default function OperatorDashboard({ isLoaded }) {
         const off      = chargers.filter(c => c.status === 'offline').length;
 
         return (
-          <div key={station.id} className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+          <div key={station.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {/* Başlık */}
-            <div className="px-5 py-4 border-b border-slate-700 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-white font-semibold text-lg">{station.name}</h3>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[station.status] || 'bg-slate-700 text-slate-300'}`}>
+                  <h3 className="text-gray-900 font-semibold text-lg">{station.name}</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[station.status] || 'bg-gray-100 text-gray-700'}`}>
                     {STATUS_LABELS[station.status] || station.status}
                   </span>
                 </div>
-                <p className="text-slate-400 text-sm mt-0.5 truncate">📍 {station.address}</p>
+                <p className="text-gray-500 text-sm mt-0.5 truncate"> {station.address}</p>
                 <div className="flex gap-4 mt-2 text-xs">
-                  <span className="text-emerald-400">✓ {avail} müsait</span>
-                  {occ > 0 && <span className="text-blue-400">● {occ} dolu</span>}
-                  {off > 0 && <span className="text-red-400">✕ {off} çevrimdışı</span>}
+                  <span className="text-blue-400"> {avail} müsait</span>
+                  {occ > 0 && <span className="text-blue-400"> {occ} dolu</span>}
+                  {off > 0 && <span className="text-red-400"> {off} çevrimdışı</span>}
                 </div>
               </div>
               <button onClick={() => setEditing(station)}
-                className="shrink-0 flex items-center gap-2 text-sm bg-slate-700 hover:bg-slate-600 text-emerald-400 font-medium px-4 py-2 rounded-xl transition-colors">
-                ✏️ Düzenle
+                className="shrink-0 flex items-center gap-2 text-sm bg-gray-100 hover:bg-gray-200 text-blue-400 font-medium px-4 py-2 rounded-xl transition-colors">
+                 Düzenle
               </button>
             </div>
 
             {/* Şarjcılar */}
             <div className="p-4 space-y-2">
               {chargers.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">
+                <p className="text-gray-400 text-sm text-center py-4">
                   Şarj ünitesi yok. "Düzenle" butonuyla ekleyebilirsiniz.
                 </p>
               ) : (
                 <>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-3">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">
                     Şarj Üniteleri ({chargers.length})
                   </p>
                   {chargers.map(ch => (
@@ -452,39 +452,39 @@ export default function OperatorDashboard({ isLoaded }) {
 
       {/* Arıza Bildirimleri */}
       {issues.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
           <button
             onClick={() => setIssuesOpen(o => !o)}
-            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-slate-700/30 transition-colors"
+            className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-100/30 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-white font-semibold">🔧 Arıza Bildirimleri</span>
+              <span className="text-gray-900 font-semibold"> Arıza Bildirimleri</span>
               <span className="text-xs bg-red-900/50 text-red-300 border border-red-800 px-2 py-0.5 rounded-full">
                 {issues.filter(i => i.status === 'open').length} açık
               </span>
-              <span className="text-xs text-slate-400">({issues.length} toplam)</span>
+              <span className="text-xs text-gray-500">({issues.length} toplam)</span>
             </div>
-            <span className="text-slate-400 text-sm">{issuesOpen ? '▲' : '▼'}</span>
+            <span className="text-gray-500 text-sm">{issuesOpen ? '' : ''}</span>
           </button>
 
           {issuesOpen && (
-            <div className="border-t border-slate-700 divide-y divide-slate-700/60">
+            <div className="border-t border-gray-200 divide-y divide-gray-200/60">
               {issues.map(issue => {
                 const s = ISSUE_STATUS_STYLE[issue.status] || ISSUE_STATUS_STYLE.open;
                 return (
                   <div key={issue.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-white">{issue.title}</p>
+                        <p className="text-sm font-semibold text-gray-900">{issue.title}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.badge}`}>{s.label}</span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        📍 {issue.station_name}
-                        {issue.charger_code && <span className="ml-2">⚡ {issue.charger_code}</span>}
-                        {issue.reporter_name && <span className="ml-2">👤 {issue.reporter_name}</span>}
+                      <p className="text-xs text-gray-500 mt-0.5">
+                         {issue.station_name}
+                        {issue.charger_code && <span className="ml-2"> {issue.charger_code}</span>}
+                        {issue.reporter_name && <span className="ml-2"> {issue.reporter_name}</span>}
                       </p>
-                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{issue.description}</p>
-                      <p className="text-[10px] text-slate-500 mt-1">
+                      <p className="text-xs text-gray-700 mt-1.5 leading-relaxed">{issue.description}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">
                         {new Date(issue.created_at).toLocaleString('tr-TR')}
                       </p>
                     </div>
@@ -495,20 +495,20 @@ export default function OperatorDashboard({ isLoaded }) {
                           disabled={patchingId === issue.id}
                           className="text-xs bg-yellow-900/50 hover:bg-yellow-900/80 border border-yellow-700 text-yellow-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                         >
-                          {patchingId === issue.id ? '…' : '🔧 Devam Ediyor'}
+                          {patchingId === issue.id ? '…' : ' Devam Ediyor'}
                         </button>
                       )}
                       {issue.status === 'in_progress' && (
                         <button
                           onClick={() => handlePatchIssue(issue.id, 'resolved')}
                           disabled={patchingId === issue.id}
-                          className="text-xs bg-emerald-900/50 hover:bg-emerald-900/80 border border-emerald-700 text-emerald-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
+                          className="text-xs bg-blue-900/50 hover:bg-blue-900/80 border border-blue-700 text-blue-300 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40"
                         >
-                          {patchingId === issue.id ? '…' : '✅ Çözüldü'}
+                          {patchingId === issue.id ? '…' : ' Çözüldü'}
                         </button>
                       )}
                       {issue.status === 'resolved' && (
-                        <span className="text-xs text-slate-500 italic py-1.5">Kapatıldı</span>
+                        <span className="text-xs text-gray-400 italic py-1.5">Kapatıldı</span>
                       )}
                     </div>
                   </div>
@@ -523,25 +523,25 @@ export default function OperatorDashboard({ isLoaded }) {
       {techModal && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={e => { if (e.target === e.currentTarget) setTechModal(null); }}>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-              <h3 className="font-semibold text-white">🔧 Teknisyen Ata & Bakım Planla</h3>
-              <button onClick={() => setTechModal(null)} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+          <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900"> Teknisyen Ata & Bakım Planla</h3>
+              <button onClick={() => setTechModal(null)} className="text-gray-500 hover:text-white text-xl leading-none"></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
                 <p className="text-xs text-yellow-300 font-semibold">{techModal.stationName}</p>
                 {techModal.chargerCode && (
-                  <p className="text-xs text-orange-300 mt-0.5">⚡ Şarjcı: {techModal.chargerCode}</p>
+                  <p className="text-xs text-orange-300 mt-0.5"> Şarjcı: {techModal.chargerCode}</p>
                 )}
-                <p className="text-xs text-slate-300 mt-0.5">{techModal.issueTitle}</p>
+                <p className="text-xs text-gray-700 mt-0.5">{techModal.issueTitle}</p>
               </div>
               <div>
-                <label className="text-xs text-slate-400">Teknisyen Seç *</label>
+                <label className="text-xs text-gray-500">Teknisyen Seç *</label>
                 <select
                   value={selectedTech}
                   onChange={e => setSelectedTech(e.target.value)}
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"
                 >
                   <option value="">— Teknisyen seçin —</option>
                   {technicians.map(t => (
@@ -549,36 +549,36 @@ export default function OperatorDashboard({ isLoaded }) {
                   ))}
                 </select>
               </div>
-              <div className="bg-slate-700/50 border border-slate-600 rounded-xl p-3 space-y-3">
-                <p className="text-xs text-slate-300 font-medium">🗓 Bakım Zaman Aralığı</p>
+              <div className="bg-gray-50 border border-gray-300 rounded-xl p-3 space-y-3">
+                <p className="text-xs text-gray-700 font-medium"> Bakım Zaman Aralığı</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] text-slate-400">Başlangıç</label>
+                    <label className="text-[10px] text-gray-500">Başlangıç</label>
                     <input
                       type="datetime-local"
                       value={maintStart}
                       onChange={e => setMaintStart(e.target.value)}
-                      className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400">Tahmini Bitiş</label>
+                    <label className="text-[10px] text-gray-500">Tahmini Bitiş</label>
                     <input
                       type="datetime-local"
                       value={maintEnd}
                       onChange={e => setMaintEnd(e.target.value)}
-                      className="w-full mt-0.5 bg-slate-700 border border-slate-600 text-white rounded-lg px-2 py-1.5 text-xs"
+                      className="w-full mt-0.5 bg-white border border-gray-300 text-gray-900 rounded-lg px-2 py-1.5 text-xs"
                     />
                   </div>
                 </div>
                 <p className="text-[10px] text-amber-400">
-                  ⚠️ Bu aralıktaki tüm rezervasyonlar iptal edilecek ve kullanıcılara otomatik iade + bildirim gönderilecek.
+                   Bu aralıktaki tüm rezervasyonlar iptal edilecek ve kullanıcılara otomatik iade + bildirim gönderilecek.
                 </p>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-gray-400">
                 {techModal.chargerCode
-                  ? <>🔌 Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
-                  : <>🏗 Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.</>
+                  ? <> Seçilen teknisyene bildirim gönderilecek ve <span className="text-orange-400">{techModal.chargerCode}</span> şarjcısı offline alınacak.</>
+                  : <> Seçilen teknisyene bildirim gönderilecek ve istasyon <span className="text-yellow-400">Bakımda</span> durumuna alınacak.</>
                 }
               </p>
               <div className="flex gap-3">
@@ -587,10 +587,10 @@ export default function OperatorDashboard({ isLoaded }) {
                   disabled={patchingId !== null || !selectedTech || !maintStart || !maintEnd}
                   className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white py-2 rounded-xl text-sm font-semibold"
                 >
-                  {patchingId !== null ? 'Atanıyor…' : techModal.chargerCode ? '🔧 Teknisyen Ata & Offline Al' : '🔧 Teknisyen Ata & Bakıma Al'}
+                  {patchingId !== null ? 'Atanıyor…' : techModal.chargerCode ? ' Teknisyen Ata & Offline Al' : ' Teknisyen Ata & Bakıma Al'}
                 </button>
                 <button onClick={() => setTechModal(null)}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl text-sm">İptal</button>
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-white py-2 rounded-xl text-sm">İptal</button>
               </div>
             </div>
           </div>
@@ -604,7 +604,7 @@ export default function OperatorDashboard({ isLoaded }) {
           station={editing}
           isLoaded={isLoaded}
           onClose={() => setEditing(null)}
-          onSaved={() => { setMsg('İstasyon güncellendi ✓'); load(); }}
+          onSaved={() => { setMsg('İstasyon güncellendi '); load(); }}
         />
       )}
     </div>

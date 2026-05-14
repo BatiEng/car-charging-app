@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 const STATUS_STYLE = {
   pending:   { bg: 'bg-yellow-900/40 border-yellow-700', text: 'text-yellow-300', label: 'Bekliyor' },
   active:    { bg: 'bg-blue-900/40 border-blue-700',     text: 'text-blue-300',   label: 'Aktif' },
-  completed: { bg: 'bg-emerald-900/40 border-emerald-700', text: 'text-emerald-300', label: 'Tamamlandı' },
-  cancelled: { bg: 'bg-slate-700/40 border-slate-600',   text: 'text-slate-400', label: 'İptal Edildi' },
+  completed: { bg: 'bg-blue-900/40 border-blue-700', text: 'text-blue-300', label: 'Tamamlandı' },
+  cancelled: { bg: 'bg-gray-100/40 border-gray-300',   text: 'text-gray-500', label: 'İptal Edildi' },
 };
 
 export default function MyReservations({ setView }) {
@@ -77,31 +77,31 @@ export default function MyReservations({ setView }) {
   return (
     <div className="p-4 sm:p-8 max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Rezervasyonlarım</h2>
-        <button onClick={load} className="text-sm text-emerald-400 hover:text-emerald-300">↻ Yenile</button>
+        <h2 className="text-2xl font-bold text-gray-900">Rezervasyonlarım</h2>
+        <button onClick={load} className="text-sm text-blue-400 hover:text-blue-300">↻ Yenile</button>
       </div>
 
       {msg && (
-        <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3 text-emerald-300 text-sm">✅ {msg}</div>
+        <div className="bg-blue-900/40 border border-blue-700 rounded-lg p-3 text-blue-300 text-sm"> {msg}</div>
       )}
       {error && (
         <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">{error}</div>
       )}
 
-      {/* ── Bekleme Kuyruğum ── */}
+      {/*  Bekleme Kuyruğum  */}
       {queueEntries.length > 0 && (
-        <div className="bg-slate-800 rounded-2xl border border-blue-800 p-4 sm:p-5">
-          <h3 className="text-sm font-semibold text-blue-300 mb-3">🔔 Bekleme Kuyruğum ({queueEntries.length})</h3>
+        <div className="bg-white rounded-lg border border-blue-800 p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-blue-300 mb-3"> Bekleme Kuyruğum ({queueEntries.length})</h3>
           <div className="space-y-2">
             {queueEntries.map(entry => (
               <div key={entry.id} className="flex items-center justify-between gap-3 bg-blue-900/20 border border-blue-800 rounded-xl px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-white truncate">{entry.station_name}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{entry.station_address}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{entry.station_name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{entry.station_address}</p>
                   <div className="flex items-center gap-3 mt-1.5">
-                    <span className="text-xs text-slate-400">🔌 {entry.connector_type}</span>
+                    <span className="text-xs text-gray-500"> {entry.connector_type}</span>
                     {entry.status === 'notified' ? (
-                      <span className="text-xs font-semibold text-blue-200 animate-pulse">🔔 Sıranız Geldi! 30 dk içinde rezervasyon yapın</span>
+                      <span className="text-xs font-semibold text-blue-200 animate-pulse"> Sıranız Geldi! 30 dk içinde rezervasyon yapın</span>
                     ) : (
                       <span className="text-xs text-blue-300">{entry.position}. sıra</span>
                     )}
@@ -121,17 +121,17 @@ export default function MyReservations({ setView }) {
       )}
 
       {loading ? (
-        <div className="text-center py-16 text-slate-400">
-          <p className="text-3xl mb-3 animate-pulse">📅</p>
+        <div className="text-center py-16 text-gray-500">
+          <p className="text-3xl mb-3 animate-pulse"></p>
           <p>Yükleniyor…</p>
         </div>
       ) : reservations.length === 0 ? (
-        <div className="bg-slate-800 rounded-2xl border border-dashed border-slate-600 p-14 text-center">
-          <p className="text-5xl mb-4">📋</p>
-          <p className="text-white font-semibold mb-1">Rezervasyon bulunamadı</p>
-          <p className="text-slate-400 text-sm mb-6">Henüz hiç rezervasyon yapmadınız.</p>
+        <div className="bg-white rounded-lg border border-dashed border-gray-300 p-14 text-center">
+          <p className="text-5xl mb-4"></p>
+          <p className="text-gray-900 font-semibold mb-1">Rezervasyon bulunamadı</p>
+          <p className="text-gray-500 text-sm mb-6">Henüz hiç rezervasyon yapmadınız.</p>
           <button onClick={() => setView('map')}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold">
+            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-semibold">
             İstasyon Bul →
           </button>
         </div>
@@ -147,24 +147,24 @@ export default function MyReservations({ setView }) {
               </h3>
               <div className="space-y-3">
                 {list.map(r => (
-                  <div key={r.id} className={`rounded-2xl border p-4 sm:p-5 ${s.bg}`}>
+                  <div key={r.id} className={`rounded-lg border p-4 sm:p-5 ${s.bg}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-white">{r.station_name}</p>
+                          <p className="font-semibold text-gray-900">{r.station_name}</p>
                           <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${s.bg} ${s.text}`}>
                             {s.label}
                           </span>
                         </div>
-                        <p className="text-slate-400 text-sm mt-0.5">{r.station_address}</p>
+                        <p className="text-gray-500 text-sm mt-0.5">{r.station_address}</p>
 
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-sm">
-                          <span className="text-slate-400">📅 <span className="text-slate-200">{r.reservation_date}</span></span>
-                          <span className="text-slate-400">🕐 <span className="text-slate-200">{r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}</span></span>
-                          <span className="text-slate-400">⚡ <span className="text-slate-200 font-mono">{r.charger_code}</span></span>
-                          <span className="text-slate-400">🚗 <span className="text-slate-200">{r.brand} {r.model}</span></span>
-                          <span className="text-slate-400">🔌 <span className="text-slate-200">{r.connector_type}</span></span>
-                          <span className="text-slate-400">💰 <span className="text-emerald-400 font-semibold">{parseFloat(r.amount_deducted).toFixed(2)} TL</span></span>
+                          <span className="text-gray-500"> <span className="text-gray-800">{r.reservation_date}</span></span>
+                          <span className="text-gray-500"> <span className="text-gray-800">{r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}</span></span>
+                          <span className="text-gray-500"> <span className="text-gray-800 font-mono">{r.charger_code}</span></span>
+                          <span className="text-gray-500"> <span className="text-gray-800">{r.brand} {r.model}</span></span>
+                          <span className="text-gray-500"> <span className="text-gray-800">{r.connector_type}</span></span>
+                          <span className="text-gray-500"> <span className="text-blue-400 font-semibold">{parseFloat(r.amount_deducted).toFixed(2)} TL</span></span>
                         </div>
                       </div>
 
@@ -183,7 +183,7 @@ export default function MyReservations({ setView }) {
                             </button>
                             {tooLate && (
                               <span className="text-[10px] text-yellow-500 text-right max-w-[100px]">
-                                ⏳ 3 saatten az kaldı
+                                 3 saatten az kaldı
                               </span>
                             )}
                           </div>

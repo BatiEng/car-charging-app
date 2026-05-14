@@ -25,7 +25,7 @@ function markerIcon(status) {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
         <circle cx="18" cy="18" r="16" fill="${color}" stroke="white" stroke-width="3"/>
-        <text x="18" y="23" text-anchor="middle" font-size="14" fill="white">🔧</text>
+        <text x="18" y="23" text-anchor="middle" font-size="14" fill="white"></text>
       </svg>`
     )}`,
     scaledSize: new window.google.maps.Size(36, 36),
@@ -38,7 +38,7 @@ function maintenanceMarkerIcon() {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44">
         <circle cx="22" cy="22" r="20" fill="#f59e0b" stroke="white" stroke-width="3"/>
-        <text x="22" y="28" text-anchor="middle" font-size="18" fill="white">🏗</text>
+        <text x="22" y="28" text-anchor="middle" font-size="18" fill="white"></text>
       </svg>`
     )}`,
     scaledSize: new window.google.maps.Size(44, 44),
@@ -85,10 +85,10 @@ export default function TechnicianView() {
       if (issue) {
         // patchIssue resolved → hem charger'ı available yapar hem ticket'ı kapatır
         await patchIssue(issue.id, 'resolved');
-        showMsg('Şarjcı müsait yapıldı, arıza kaydı çözüldü ✓');
+        showMsg('Şarjcı müsait yapıldı, arıza kaydı çözüldü ');
       } else {
         await patchCharger(chargerId, 'available');
-        showMsg('Şarjcı müsait olarak işaretlendi ✓');
+        showMsg('Şarjcı müsait olarak işaretlendi ');
       }
       setSelected(null);
       load();
@@ -109,7 +109,7 @@ export default function TechnicianView() {
         // Arıza kaydı yoksa direkt istasyonu aktife al
         await updateStation(stationId, { status: 'active' });
       }
-      showMsg('Onarım tamamlandı – istasyon aktif, ticket çözüldü ✓');
+      showMsg('Onarım tamamlandı – istasyon aktif, ticket çözüldü ');
       setSelectedStation(null);
       load();
     } catch (e) { showMsg(e.message, 'error'); }
@@ -148,8 +148,8 @@ export default function TechnicianView() {
   return (
     <div className="flex flex-col h-full">
       {/* Header bar */}
-      <div className="p-4 sm:p-6 border-b border-slate-700 flex flex-wrap items-center gap-4">
-        <h2 className="text-xl font-bold text-white">Teknisyen Görünümü</h2>
+      <div className="p-4 sm:p-6 border-b border-gray-200 flex flex-wrap items-center gap-4">
+        <h2 className="text-xl font-bold text-gray-900">Teknisyen Görünümü</h2>
         <div className="flex flex-wrap gap-3 ml-auto">
           {maintenanceStations.length > 0 && (
             <span className="flex items-center gap-1.5 text-sm text-yellow-400">
@@ -167,8 +167,8 @@ export default function TechnicianView() {
           <span className="flex items-center gap-1.5 text-sm text-blue-400">
             <span className="w-2 h-2 rounded-full bg-blue-400" /> {occupiedCount} dolu
           </span>
-          <span className="flex items-center gap-1.5 text-sm text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" /> {allChargers.filter(c => c.status === 'available').length} müsait
+          <span className="flex items-center gap-1.5 text-sm text-blue-400">
+            <span className="w-2 h-2 rounded-full bg-blue-400" /> {allChargers.filter(c => c.status === 'available').length} müsait
           </span>
         </div>
       </div>
@@ -177,10 +177,10 @@ export default function TechnicianView() {
         <div className={`mx-4 mt-3 rounded-lg p-3 text-sm flex items-start justify-between gap-2 ${
           msgType === 'error'
             ? 'bg-red-900/40 border border-red-700 text-red-300'
-            : 'bg-emerald-900/40 border border-emerald-700 text-emerald-300'
+            : 'bg-blue-900/40 border border-blue-700 text-blue-300'
         }`}>
           <span>{msg}</span>
-          <button onClick={() => setMsg('')} className="shrink-0 opacity-60 hover:opacity-100 text-xs">✕</button>
+          <button onClick={() => setMsg('')} className="shrink-0 opacity-60 hover:opacity-100 text-xs"></button>
         </div>
       )}
 
@@ -236,7 +236,7 @@ export default function TechnicianView() {
                       onClick={() => handleFixCharger(selected.id, selected.charger_code, selected.status)}
                       style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                     >
-                      {actionLoading ? '…' : '✅ Onarıldı – Müsait İşaretle'}
+                      {actionLoading ? '…' : ' Onarıldı – Müsait İşaretle'}
                     </button>
                   )}
                 </div>
@@ -252,7 +252,7 @@ export default function TechnicianView() {
                 <div style={{ background: '#1e293b', color: 'white', borderRadius: 8, padding: 12, minWidth: 210 }}>
                   <p style={{ fontWeight: 600 }}>{selectedStation.name}</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{selectedStation.address}</p>
-                  <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}>🏗 Bakımda</p>
+                  <p style={{ fontSize: 12, marginTop: 6, color: '#fbbf24', fontWeight: 600 }}> Bakımda</p>
                   <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                     {(selectedStation.chargers || []).length} şarjcı
                   </p>
@@ -263,7 +263,7 @@ export default function TechnicianView() {
                     );
                     return issue ? (
                       <p style={{ fontSize: 10, color: '#fb923c', marginTop: 4, background: '#431407', borderRadius: 4, padding: '3px 6px' }}>
-                        🔧 {issue.title}
+                         {issue.title}
                       </p>
                     ) : null;
                   })()}
@@ -273,7 +273,7 @@ export default function TechnicianView() {
                     onClick={() => handleFixStation(selectedStation.id)}
                     style={{ marginTop: 8, width: '100%', background: actionLoading ? '#374151' : '#059669', color: 'white', border: 'none', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                   >
-                    {actionLoading ? '…' : '✅ Onarıldı – Aktif Yap'}
+                    {actionLoading ? '…' : ' Onarıldı – Aktif Yap'}
                   </button>
                   {/* Onarılamaz butonu */}
                   <button
@@ -281,14 +281,14 @@ export default function TechnicianView() {
                     onClick={() => handleCannotFixStation(selectedStation.id)}
                     style={{ marginTop: 6, width: '100%', background: actionLoading ? '#374151' : '#7f1d1d', color: '#fca5a5', border: '1px solid #991b1b', borderRadius: 6, padding: '6px 0', fontWeight: 600, fontSize: 11, cursor: actionLoading ? 'not-allowed' : 'pointer' }}
                   >
-                    {actionLoading ? '…' : '⛔ Onarılamaz – Çevrimdışı Yap'}
+                    {actionLoading ? '…' : ' Onarılamaz – Çevrimdışı Yap'}
                   </button>
                 </div>
               </InfoWindowF>
             )}
           </GoogleMap>
         ) : (
-          <div className="flex items-center justify-center h-64 text-slate-400">
+          <div className="flex items-center justify-center h-64 text-gray-500">
             Harita yükleniyor...
           </div>
         )}
@@ -296,12 +296,12 @@ export default function TechnicianView() {
 
       {/* Bottom lists */}
       {(maintenanceStations.length > 0 || offlineCount > 0 || overstayCount > 0) && (
-        <div className="border-t border-slate-700 divide-y divide-slate-700/60">
+        <div className="border-t border-gray-200 divide-y divide-gray-200/60">
 
           {/* Maintenance stations */}
           {maintenanceStations.length > 0 && (
             <div className="p-4">
-              <h4 className="text-sm font-semibold text-yellow-400 mb-2">🏗 Bakımdaki İstasyonlar</h4>
+              <h4 className="text-sm font-semibold text-yellow-400 mb-2"> Bakımdaki İstasyonlar</h4>
               <div className="flex flex-wrap gap-2">
                 {maintenanceStations.map(s => (
                   <button
@@ -314,7 +314,7 @@ export default function TechnicianView() {
                     }}
                     className="bg-yellow-900/30 border border-yellow-700 text-yellow-300 text-xs px-3 py-1.5 rounded-lg hover:bg-yellow-900/50 transition-colors"
                   >
-                    🏗 {s.name}
+                     {s.name}
                   </button>
                 ))}
               </div>
@@ -324,7 +324,7 @@ export default function TechnicianView() {
           {/* Overstay chargers */}
           {overstayCount > 0 && (
             <div className="p-4">
-              <h4 className="text-sm font-semibold text-orange-400 mb-2">⚠️ Overstay Şarjcılar</h4>
+              <h4 className="text-sm font-semibold text-orange-400 mb-2"> Overstay Şarjcılar</h4>
               <div className="flex flex-wrap gap-2">
                 {allChargers.filter(c => c.status === 'overstay').map(c => (
                   <button

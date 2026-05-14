@@ -10,14 +10,14 @@ const GRACE_SECONDS   = 120;  // 2 dakika grace period
 const PENALTY_PER_MIN = 2.0;  // TL per overstay minute
 
 export default function ChargingSession({ activeSession, setActiveSession, setView }) {
-  // ── PIN entry / session start ──────────────────────────────
+  //  PIN entry / session start 
   const [reservations, setReservations]   = useState([]);
   const [selectedRes,  setSelectedRes]    = useState(null);
   const [pin,          setPin]            = useState('');
   const [pinError,     setPinError]       = useState('');
   const [starting,     setStarting]       = useState(false);
 
-  // ── Live session state ─────────────────────────────────────
+  //  Live session state 
   const [elapsed,  setElapsed]  = useState(() => {
     try { return parseInt(localStorage.getItem('ev_session_elapsed') || '0'); } catch { return 0; }
   });
@@ -28,12 +28,12 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   const [receipt,  setReceipt]  = useState(null);
   const [stopping, setStopping] = useState(false);
 
-  // ── Demo time polling ──────────────────────────────────────
+  //  Demo time polling 
   const [demoTimeMs,    setDemoTimeMs]    = useState(null);
   // After extension, override local reservation end time
   const [resEndOverride, setResEndOverride] = useState(null);
 
-  // ── Extension state ────────────────────────────────────────
+  //  Extension state 
   const [extCheck,  setExtCheck]  = useState(null);
   const [extending, setExtending] = useState(false);
   const [extResult, setExtResult] = useState(null);
@@ -42,7 +42,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   const demoTimerRef      = useRef(null);
   const overstayMarkedRef = useRef(false);
 
-  // ── Compute reservation end time in ms ───────────────────
+  //  Compute reservation end time in ms 
   const reservationEndMs = (() => {
     if (resEndOverride) return resEndOverride;
     if (!activeSession?.reservation) return null;
@@ -52,7 +52,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   })();
   const graceEndMs = reservationEndMs ? reservationEndMs + GRACE_SECONDS * 1000 : null;
 
-  // ── Phase calculation (based on demo time) ────────────────
+  //  Phase calculation (based on demo time) 
   let phase            = 'charging';  // 'charging' | 'grace' | 'overstay'
   let overstayMs       = 0;
   let graceRemainingMs = GRACE_SECONDS * 1000;
@@ -75,7 +75,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   const overstayPenalty      = parseFloat((overstayMinutes * PENALTY_PER_MIN).toFixed(2));
   const graceRemainingS      = Math.max(0, Math.ceil(graceRemainingMs / 1000));
 
-  // ── Format remaining time ─────────────────────────────────
+  //  Format remaining time 
   function fmtRemaining(ms) {
     if (ms <= 0) return '0:00';
     const totalSec = Math.floor(ms / 1000);
@@ -86,7 +86,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  // ── Load pending reservations when no active session ──────
+  //  Load pending reservations when no active session 
   useEffect(() => {
     if (!activeSession) {
       getReservations()
@@ -95,7 +95,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   }, [activeSession]);
 
-  // ── Poll demo time every 5 seconds ───────────────────────
+  //  Poll demo time every 5 seconds 
   const pollDemoTime = useCallback(async () => {
     try {
       const d  = await getDemoTime();
@@ -111,7 +111,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     return () => clearInterval(demoTimerRef.current);
   }, [activeSession, done, pollDemoTime]);
 
-  // ── kWh accumulation timer (real seconds, actual rate) ────
+  //  kWh accumulation timer (real seconds, actual rate) 
   useEffect(() => {
     if (!activeSession || done) return;
     const powerKw    = parseFloat(activeSession.charger_power || activeSession.power || 22);
@@ -132,7 +132,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     return () => clearInterval(timerRef.current);
   }, [activeSession, done]);
 
-  // ── Mark charger as overstay once when phase transitions ──
+  //  Mark charger as overstay once when phase transitions 
   useEffect(() => {
     if (!activeSession || done) return;
     if (phase === 'overstay' && !overstayMarkedRef.current) {
@@ -141,14 +141,14 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   }, [phase, activeSession, done]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Reset refs when session changes ───────────────────────
+  //  Reset refs when session changes 
   useEffect(() => {
     overstayMarkedRef.current = false;
     setResEndOverride(null);
     setExtResult(null);
   }, [activeSession]);
 
-  // ── Clear localStorage when session ends ──────────────────
+  //  Clear localStorage when session ends 
   useEffect(() => {
     if (done) {
       localStorage.removeItem('ev_session_elapsed');
@@ -156,7 +156,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   }, [done]);
 
-  // ── Handle PIN submit → start session ─────────────────────
+  //  Handle PIN submit → start session 
   const handleStartSession = async (e) => {
     e.preventDefault();
     if (!selectedRes) { setPinError('Rezervasyon seçin'); return; }
@@ -183,7 +183,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  // ── Handle manual stop session ────────────────────────────
+  //  Handle manual stop session 
   const handleStop = async () => {
     clearInterval(timerRef.current);
     clearInterval(demoTimerRef.current);
@@ -200,7 +200,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  // ── Extension handlers ─────────────────────────────────────
+  //  Extension handlers 
   const handleCheckExtension = async () => {
     setExtCheck({ loading: true });
     try {
@@ -229,32 +229,32 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  // ── No session yet — show PIN entry ──────────────────────
+  //  No session yet — show PIN entry 
   if (!activeSession) {
     return (
       <div className="p-4 sm:p-8 max-w-xl mx-auto space-y-6">
-        <h2 className="text-2xl font-bold text-white">Şarj Başlat</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Şarj Başlat</h2>
 
         {reservations.length === 0 ? (
-          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 text-center">
-            <div className="text-5xl mb-4">⚡</div>
-            <h3 className="text-lg font-semibold text-white mb-2">Aktif Rezervasyon Yok</h3>
-            <p className="text-slate-400 text-sm mb-6">Şarj başlatmak için önce rezervasyon yapın.</p>
+          <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
+            <div className="text-5xl mb-4"></div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Aktif Rezervasyon Yok</h3>
+            <p className="text-gray-500 text-sm mb-6">Şarj başlatmak için önce rezervasyon yapın.</p>
             <button
               onClick={() => setView('reservation')}
-              className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl hover:bg-emerald-500 text-sm font-semibold transition-colors"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-500 text-sm font-semibold transition-colors"
             >
               Rezervasyon Yap
             </button>
           </div>
         ) : (
-          <form onSubmit={handleStartSession} className="bg-slate-800 rounded-2xl border border-slate-700 p-6 space-y-5">
-            <p className="text-slate-300 text-sm">
+          <form onSubmit={handleStartSession} className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
+            <p className="text-gray-700 text-sm">
               İstasyona geldiniz mi? Rezervasyonunuzu seçip araç PIN kodunuzu girin.
             </p>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Rezervasyon</label>
+              <label className="block text-xs text-gray-500 mb-1">Rezervasyon</label>
               <div className="space-y-2">
                 {reservations.map(r => (
                   <div
@@ -262,23 +262,23 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
                     onClick={() => setSelectedRes(r)}
                     className={`cursor-pointer rounded-xl border-2 p-3 transition-all ${
                       selectedRes?.id === r.id
-                        ? 'border-emerald-500 bg-emerald-900/20'
-                        : 'border-slate-700 hover:border-slate-500'
+                        ? 'border-blue-500 bg-blue-900/20'
+                        : 'border-gray-200 hover:border-slate-500'
                     }`}
                   >
-                    <p className="text-sm font-medium text-white">{r.station_name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm font-medium text-gray-900">{r.station_name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {r.reservation_date} · {r.start_time}–{r.end_time} ·{' '}
                       <span className="font-mono">{r.charger_code}</span>
                     </p>
-                    <p className="text-xs text-slate-400">{r.brand} {r.model} · {r.plate}</p>
+                    <p className="text-xs text-gray-500">{r.brand} {r.model} · {r.plate}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Araç PIN Kodu</label>
+              <label className="block text-xs text-gray-500 mb-1">Araç PIN Kodu</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -286,10 +286,10 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
                 maxLength={4}
                 value={pin}
                 onChange={e => setPin(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-slate-700 border border-slate-600 text-white text-center text-3xl font-mono tracking-widest rounded-xl px-4 py-4 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-white border border-gray-300 text-gray-900 text-center text-3xl font-mono tracking-widest rounded-xl px-4 py-4 focus:outline-none focus:border-blue-500"
                 placeholder="••••"
               />
-              <p className="text-xs text-slate-500 mt-1 text-center">
+              <p className="text-xs text-gray-400 mt-1 text-center">
                 PIN kodunuzu araç kayıt sayfasında görebilirsiniz
               </p>
             </div>
@@ -303,9 +303,9 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
             <button
               type="submit"
               disabled={starting || !selectedRes || pin.length !== 4}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-colors"
             >
-              {starting ? 'Başlatılıyor...' : '⚡ Şarjı Başlat'}
+              {starting ? 'Başlatılıyor...' : ' Şarjı Başlat'}
             </button>
           </form>
         )}
@@ -313,21 +313,21 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     );
   }
 
-  // ── Completed ──────────────────────────────────────────────
+  //  Completed 
   if (done) {
     const r = receipt || {};
     return (
       <div className="p-4 sm:p-8 max-w-xl mx-auto">
-        <div className="bg-slate-800 rounded-2xl border border-emerald-700 p-5 sm:p-8 text-center">
-          <div className="w-20 h-20 bg-emerald-900/50 rounded-full flex items-center justify-center text-4xl mx-auto mb-5">
-            🎉
+        <div className="bg-white rounded-lg border border-blue-700 p-5 sm:p-8 text-center">
+          <div className="w-20 h-20 bg-blue-900/50 rounded-full flex items-center justify-center text-4xl mx-auto mb-5">
+            
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Şarj Tamamlandı!</h2>
-          <p className="text-slate-400 text-sm mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Şarj Tamamlandı!</h2>
+          <p className="text-gray-500 text-sm mb-6">
             {activeSession.brand} {activeSession.model} şarj edildi.
           </p>
 
-          <div className="bg-slate-700/50 rounded-xl p-5 text-left space-y-2.5 text-sm mb-6">
+          <div className="bg-gray-50 rounded-xl p-5 text-left space-y-2.5 text-sm mb-6">
             {[
               ['İstasyon',      r.station       || activeSession.station_name],
               ['Araç',          r.vehicle       || `${activeSession.brand} ${activeSession.model} (${activeSession.plate})`],
@@ -338,25 +338,25 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               ['Gerçek Süre',   fmtTime(elapsed)],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between">
-                <span className="text-slate-400">{k}</span>
-                <span className="font-medium text-slate-200">{v}</span>
+                <span className="text-gray-500">{k}</span>
+                <span className="font-medium text-gray-800">{v}</span>
               </div>
             ))}
             {r.refund > 0 && (
-              <div className="flex justify-between text-emerald-400">
+              <div className="flex justify-between text-blue-400">
                 <span>İade (kullanılmayan süre)</span>
                 <span className="font-semibold">+{r.refund} TL</span>
               </div>
             )}
             {r.overstay_minutes > 0 && (
               <div className="flex justify-between text-red-400">
-                <span>⚠️ Overstay Cezası ({parseFloat(r.overstay_minutes).toFixed(1)} dk)</span>
+                <span> Overstay Cezası ({parseFloat(r.overstay_minutes).toFixed(1)} dk)</span>
                 <span className="font-semibold">-{r.overstay_penalty} TL</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-slate-600 pt-2.5">
-              <span className="font-bold text-white">Toplam Ücret</span>
-              <span className="font-bold text-emerald-400 text-xl">
+            <div className="flex justify-between border-t border-gray-300 pt-2.5">
+              <span className="font-bold text-gray-900">Toplam Ücret</span>
+              <span className="font-bold text-blue-400 text-xl">
                 {r.total_cost ? `${r.total_cost} TL` : `${(kwh * 4).toFixed(2)} TL`}
               </span>
             </div>
@@ -371,7 +371,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               localStorage.removeItem('ev_session_kwh');
               setView('vehicles');
             }}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
           >
             Ana Sayfaya Dön
           </button>
@@ -380,7 +380,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     );
   }
 
-  // ── Active Session Live View ──────────────────────────────
+  //  Active Session Live View 
   const powerKw     = parseFloat(activeSession.charger_power || 22);
   const pricePerKwh = parseFloat(activeSession.reservation?.price_per_kwh || 4);
   const cost        = (kwh * pricePerKwh).toFixed(2);
@@ -398,24 +398,24 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Aktif Oturum</h1>
-          <p className="text-slate-400 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-gray-900">Aktif Oturum</h1>
+          <p className="text-gray-500 text-sm mt-0.5">
             {activeSession.station_name} · {activeSession.brand} {activeSession.model}
           </p>
         </div>
         {isOverstay ? (
           <div className="flex items-center gap-2 bg-red-900/50 text-red-400 px-4 py-2 rounded-full text-sm font-semibold border border-red-700">
             <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-            ⚠️ Ceza Var
+             Ceza Var
           </div>
         ) : isGrace ? (
           <div className="flex items-center gap-2 bg-amber-900/50 text-amber-400 px-4 py-2 rounded-full text-sm font-semibold border border-amber-700">
             <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
-            ⏳ Grace Süresi
+             Grace Süresi
           </div>
         ) : (
-          <div className="flex items-center gap-2 bg-emerald-900/50 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold border border-emerald-700">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+          <div className="flex items-center gap-2 bg-blue-900/50 text-blue-400 px-4 py-2 rounded-full text-sm font-semibold border border-blue-700">
+            <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
             Şarj Oluyor
           </div>
         )}
@@ -424,7 +424,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       {/* Grace warning banner */}
       {isGrace && (
         <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-4 mb-4">
-          <p className="text-amber-400 font-semibold text-sm">⏳ Rezervasyon süreniz doldu!</p>
+          <p className="text-amber-400 font-semibold text-sm"> Rezervasyon süreniz doldu!</p>
           <p className="text-amber-300 text-xs mt-1">
             Aracınızı <strong>{graceRemainingS} saniye</strong> içinde çıkarın, aksi hâlde ceza uygulanmaya başlar.
           </p>
@@ -441,7 +441,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       {/* Overstay warning banner */}
       {isOverstay && (
         <div className="bg-red-900/30 border border-red-700 rounded-xl p-4 mb-4">
-          <p className="text-red-400 font-semibold text-sm">⚠️ Ceza birikmeye başladı!</p>
+          <p className="text-red-400 font-semibold text-sm"> Ceza birikmeye başladı!</p>
           <p className="text-red-300 text-xs mt-1">
             Şarjcıyı <strong>{overstayDispMin} dk {overstayDispSec} sn</strong> fazla
             kullanıyorsunuz. Ceza birikmeye devam ediyor, lütfen şarjı durdurun.
@@ -450,12 +450,12 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       )}
 
       {/* Animated charge bar */}
-      <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
         <div className="flex justify-between items-center mb-3">
-          <span className="text-sm font-semibold text-slate-300">Şarj Edilen Enerji</span>
-          <span className="text-3xl font-bold text-white">{kwh.toFixed(2)} kWh</span>
+          <span className="text-sm font-semibold text-gray-700">Şarj Edilen Enerji</span>
+          <span className="text-3xl font-bold text-gray-900">{kwh.toFixed(2)} kWh</span>
         </div>
-        <div className="w-full h-9 bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-full h-9 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-1000 flex items-center justify-end pr-3"
             style={{
@@ -467,31 +467,31 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
                   : 'linear-gradient(to right, #10b981, #2dd4bf)',
             }}
           >
-            {kwh > 5 && <span className="text-white text-xs font-bold">{kwh.toFixed(1)} kWh</span>}
+            {kwh > 5 && <span className="text-gray-900 text-xs font-bold">{kwh.toFixed(1)} kWh</span>}
           </div>
         </div>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
-          <p className="text-xl sm:text-2xl font-bold text-emerald-400">~{cost} TL</p>
-          <p className="text-xs text-slate-400 mt-1">Tahmini Ücret</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-blue-400">~{cost} TL</p>
+          <p className="text-xs text-gray-500 mt-1">Tahmini Ücret</p>
         </div>
 
         {/* Time display — changes by phase */}
         {isCharging && (
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
-            <p className="text-xl sm:text-2xl font-bold text-white">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 text-center">
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">
               {demoTimeMs ? fmtRemaining(timeRemainingMs) : '…'}
             </p>
-            <p className="text-xs text-slate-400 mt-1">Kalan Süre</p>
+            <p className="text-xs text-gray-500 mt-1">Kalan Süre</p>
           </div>
         )}
         {isGrace && (
           <div className="bg-amber-900/20 rounded-xl border border-amber-700 p-4 sm:p-5 text-center">
             <p className="text-xl sm:text-2xl font-bold text-amber-400">{graceRemainingS}sn</p>
-            <p className="text-xs text-slate-400 mt-1">Grace Süresi</p>
+            <p className="text-xs text-gray-500 mt-1">Grace Süresi</p>
           </div>
         )}
         {isOverstay && (
@@ -499,17 +499,17 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
             <p className="text-xl sm:text-2xl font-bold text-red-400">
               {overstayDispMin}dk {overstayDispSec}sn
             </p>
-            <p className="text-xs text-slate-400 mt-1">Fazla Kullanım</p>
+            <p className="text-xs text-gray-500 mt-1">Fazla Kullanım</p>
           </div>
         )}
 
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 text-center">
           <p className="text-xl sm:text-2xl font-bold text-blue-400">{powerKw} kW</p>
-          <p className="text-xs text-slate-400 mt-1">Şarj Gücü</p>
+          <p className="text-xs text-gray-500 mt-1">Şarj Gücü</p>
         </div>
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-5 text-center">
-          <p className="text-xl sm:text-2xl font-bold text-slate-200">{activeSession.plate}</p>
-          <p className="text-xs text-slate-400 mt-1">Plaka</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 text-center">
+          <p className="text-xl sm:text-2xl font-bold text-gray-800">{activeSession.plate}</p>
+          <p className="text-xs text-gray-500 mt-1">Plaka</p>
         </div>
       </div>
 
@@ -518,7 +518,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 text-center col-span-2">
             <p className="text-2xl font-bold text-red-400">-{overstayPenalty} TL</p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Birikmiş Ceza ({overstayMinutes.toFixed(1)} dk × {PENALTY_PER_MIN} TL/dk)
             </p>
           </div>
@@ -527,8 +527,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
 
       {/* Extension success banner */}
       {extResult && (
-        <div className="bg-emerald-900/30 border border-emerald-700 rounded-xl p-4 mb-3 text-sm text-emerald-300">
-          ✅ Uzatma başarılı! Yeni bitiş: {new Date(extResult.new_end_time.replace(' ', 'T')).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} · {extResult.cost} TL düşüldü.
+        <div className="bg-blue-900/30 border border-blue-700 rounded-xl p-4 mb-3 text-sm text-blue-300">
+           Uzatma başarılı! Yeni bitiş: {new Date(extResult.new_end_time.replace(' ', 'T')).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} · {extResult.cost} TL düşüldü.
         </div>
       )}
 
@@ -538,7 +538,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
           onClick={handleCheckExtension}
           className="w-full bg-blue-900/40 hover:bg-blue-800/60 text-blue-400 font-semibold py-3 rounded-xl border border-blue-700 transition-colors mb-3"
         >
-          ⏱️ Süreyi Uzat (1 Saat)
+           Süreyi Uzat (1 Saat)
         </button>
       )}
 
@@ -557,9 +557,9 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         {stopping
           ? 'Durduruluyor...'
           : isOverstay
-            ? `🛑 Şarjı Durdur (${overstayPenalty} TL ceza ödenecek)`
+            ? ` Şarjı Durdur (${overstayPenalty} TL ceza ödenecek)`
             : isGrace
-              ? '⚠️ Şarjı Durdur (grace süresinde)'
+              ? ' Şarjı Durdur (grace süresinde)'
               : 'Şarjı Durdur'
         }
       </button>
@@ -567,40 +567,40 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       {/* Extension check / confirm modal */}
       {extCheck && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 w-full max-w-sm">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 w-full max-w-sm">
             {extCheck.loading ? (
-              <p className="text-slate-300 text-center py-4">Kontrol ediliyor…</p>
+              <p className="text-gray-700 text-center py-4">Kontrol ediliyor…</p>
             ) : extCheck.can_extend ? (
               <>
-                <h3 className="text-lg font-bold text-white mb-1">⏱️ Oturumu Uzat</h3>
-                <p className="text-slate-400 text-xs mb-4">Rezervasyonunuz 1 saat uzatılacak.</p>
-                <div className="bg-slate-700/50 rounded-xl p-4 space-y-2.5 text-sm mb-5">
+                <h3 className="text-lg font-bold text-gray-900 mb-1"> Oturumu Uzat</h3>
+                <p className="text-gray-500 text-xs mb-4">Rezervasyonunuz 1 saat uzatılacak.</p>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 text-sm mb-5">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Yeni Bitiş Saati</span>
-                    <span className="text-white font-medium">
+                    <span className="text-gray-500">Yeni Bitiş Saati</span>
+                    <span className="text-gray-900 font-medium">
                       {new Date(extCheck.new_end_time.replace(' ', 'T')).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Ücret</span>
-                    <span className="text-emerald-400 font-semibold">{extCheck.cost} TL</span>
+                    <span className="text-gray-500">Ücret</span>
+                    <span className="text-blue-400 font-semibold">{extCheck.cost} TL</span>
                   </div>
-                  <div className="flex justify-between border-t border-slate-600 pt-2">
-                    <span className="text-slate-400">Bakiye (sonra)</span>
-                    <span className="text-white">{(extCheck.wallet_balance - extCheck.cost).toFixed(2)} TL</span>
+                  <div className="flex justify-between border-t border-gray-300 pt-2">
+                    <span className="text-gray-500">Bakiye (sonra)</span>
+                    <span className="text-gray-900">{(extCheck.wallet_balance - extCheck.cost).toFixed(2)} TL</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setExtCheck(null)}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
                   >
                     İptal
                   </button>
                   <button
                     onClick={handleExtend}
                     disabled={extending}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
                   >
                     {extending ? 'İşleniyor…' : 'Onayla'}
                   </button>
@@ -608,11 +608,11 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
               </>
             ) : (
               <>
-                <h3 className="text-lg font-bold text-white mb-3">Uzatma Yapılamıyor</h3>
-                <p className="text-slate-300 text-sm mb-5">{extCheck.reason}</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-3">Uzatma Yapılamıyor</h3>
+                <p className="text-gray-700 text-sm mb-5">{extCheck.reason}</p>
                 <button
                   onClick={() => setExtCheck(null)}
-                  className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
                 >
                   Tamam
                 </button>

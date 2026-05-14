@@ -11,7 +11,7 @@ export const STATUS_BADGE = {
   occupied:    'bg-yellow-100 text-yellow-700',
   offline:     'bg-red-100 text-red-700',
   maintenance: 'bg-orange-100 text-orange-700',
-  inactive:    'bg-slate-200 text-slate-600',
+  inactive:    'bg-slate-200 text-gray-400',
 }
 
 export const getStationStatus = (station) => {

@@ -23,7 +23,7 @@ function getStationStatus(station) {
   return 'occupied';
 }
 
-// ── Sorun Bildirme Modal'ı ────────────────────────────────────
+//  Sorun Bildirme Modal'ı 
 function IssueModal({ station, onClose }) {
   const [form,    setForm]    = useState({ title: '', description: '', charger_id: '' });
   const [saving,  setSaving]  = useState(false);
@@ -53,24 +53,24 @@ function IssueModal({ station, onClose }) {
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>
-            <h3 className="font-semibold text-white">⚠️ Sorun Bildir</h3>
-            <p className="text-xs text-slate-400 mt-0.5">{station.name}</p>
+            <h3 className="font-semibold text-gray-900"> Sorun Bildir</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{station.name}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl leading-none">✕</button>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none"></button>
         </div>
 
         <div className="p-5">
           {success ? (
             <div className="text-center py-6">
-              <div className="text-5xl mb-3">✅</div>
-              <p className="text-white font-semibold">Bildiriminiz alındı</p>
-              <p className="text-slate-400 text-sm mt-1">İstasyon operatörüne iletildi, en kısa sürede incelenecek.</p>
+              <div className="text-5xl mb-3"></div>
+              <p className="text-gray-900 font-semibold">Bildiriminiz alındı</p>
+              <p className="text-gray-500 text-sm mt-1">İstasyon operatörüne iletildi, en kısa sürede incelenecek.</p>
               <button
                 onClick={onClose}
-                className="mt-5 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-xl text-sm font-semibold"
+                className="mt-5 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-sm font-semibold"
               >Kapat</button>
             </div>
           ) : (
@@ -78,11 +78,11 @@ function IssueModal({ station, onClose }) {
               {/* Şarjcı seç (opsiyonel) */}
               {chargers.length > 0 && (
                 <div>
-                  <label className="text-xs text-slate-400">Şarj Ünitesi (opsiyonel)</label>
+                  <label className="text-xs text-gray-500">Şarj Ünitesi (opsiyonel)</label>
                   <select
                     value={form.charger_id}
                     onChange={e => setForm(f => ({ ...f, charger_id: e.target.value }))}
-                    className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm"
+                    className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="">— Genel istasyon sorunu —</option>
                     {chargers.map(c => (
@@ -96,25 +96,25 @@ function IssueModal({ station, onClose }) {
 
               {/* Başlık */}
               <div>
-                <label className="text-xs text-slate-400">Başlık *</label>
+                <label className="text-xs text-gray-500">Başlık *</label>
                 <input
                   value={form.title}
                   onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                   maxLength={120}
                   placeholder="örn. Şarjcı bağlantı vermiyor"
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm placeholder-slate-500"
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm placeholder-slate-500"
                 />
               </div>
 
               {/* Açıklama */}
               <div>
-                <label className="text-xs text-slate-400">Açıklama *</label>
+                <label className="text-xs text-gray-500">Açıklama *</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   rows={4}
                   placeholder="Sorunu detaylı açıklayın…"
-                  className="w-full mt-1 bg-slate-700 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm resize-none placeholder-slate-500"
+                  className="w-full mt-1 bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm resize-none placeholder-slate-500"
                 />
               </div>
 
@@ -126,11 +126,11 @@ function IssueModal({ station, onClose }) {
                   disabled={saving}
                   className="flex-1 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold"
                 >
-                  {saving ? 'Gönderiliyor…' : '📤 Bildirimi Gönder'}
+                  {saving ? 'Gönderiliyor…' : ' Bildirimi Gönder'}
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-white py-2.5 rounded-xl text-sm"
                 >İptal</button>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
   const [myQueueEntries, setMyQueueEntries] = useState([]);
   const [queueLoading,   setQueueLoading]   = useState(false);
 
-  // ── Konum izni ───────────────────────────────────────────────
+  //  Konum izni 
   useEffect(() => {
     if (!navigator.geolocation) { setLocReady(true); return; }
     navigator.geolocation.getCurrentPosition(
@@ -203,7 +203,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     );
   }, []);
 
-  // ── İstasyon verisi ──────────────────────────────────────────
+  //  İstasyon verisi 
   useEffect(() => {
     const load = () => getStations().then(setStations).catch(() => {});
     load();
@@ -211,14 +211,14 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     return () => clearInterval(interval);
   }, []);
 
-  // ── En çok kullanılan istasyon (sadece driver) ───────────────
+  //  En çok kullanılan istasyon (sadece driver) 
   useEffect(() => {
     if (user?.role === 'driver') {
       getMyTopStation().then(setTopStation).catch(() => {});
     }
   }, [user]);
 
-  // ── Favoriler (sadece driver) ────────────────────────────────
+  //  Favoriler (sadece driver) 
   const loadFavorites = () => {
     if (user?.role === 'driver') {
       getMyFavorites()
@@ -244,7 +244,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     finally { setFavLoading(null); }
   };
 
-  // ── Bekleme Kuyruğu ─────────────────────────────────────────
+  //  Bekleme Kuyruğu 
   const loadQueue = () => {
     if (user?.role === 'driver') {
       getMyQueue().then(rows => setMyQueueEntries(rows)).catch(() => {});
@@ -276,7 +276,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     }
   };
 
-  // ── Yakın istasyon yoksa öner ────────────────────────────────
+  //  Yakın istasyon yoksa öner 
   useEffect(() => {
     if (!locReady || stations.length === 0 || promptDismissed) return;
 
@@ -301,7 +301,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     }
   }, [locReady, stations, userLocation, promptDismissed, user]);
 
-  // ── Araç değişince connector filtresi ────────────────────────
+  //  Araç değişince connector filtresi 
   useEffect(() => {
     const conn = selectedVehicle?.connector_type || selectedVehicle?.connector;
     setFilterConn(conn || 'all');
@@ -363,12 +363,12 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     visibleStations.flatMap(s => (s.chargers || []).map(c => c.connector_type))
   )].filter(Boolean);
 
-  const STATUS_LABEL = { available: 'Müsait', occupied: 'Dolu', offline: 'Çevrimdışı', maintenance: '🔧 Bakımda', inactive: 'Pasif' };
+  const STATUS_LABEL = { available: 'Müsait', occupied: 'Dolu', offline: 'Çevrimdışı', maintenance: ' Bakımda', inactive: 'Pasif' };
 
   return (
     <div className="flex flex-col h-full">
 
-      {/* ── Sorun bildirme modal'ı ── */}
+      {/*  Sorun bildirme modal'ı  */}
       {issueStation && (
         <IssueModal
           station={issueStation}
@@ -376,11 +376,11 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
         />
       )}
 
-      {/* ── Yakın istasyon yoksa banner ── */}
+      {/*  Yakın istasyon yoksa banner  */}
       {nearbyPrompt && !promptDismissed && (
         <div className="bg-amber-900/70 border-b border-amber-700 px-4 py-2.5 flex flex-wrap items-center gap-3 shrink-0">
           <span className="text-sm text-amber-200 flex-1">
-            📍 Konumunuza yakın ({nearbyPrompt.dist} km içinde) istasyon bulunamadı.
+             Konumunuza yakın ({nearbyPrompt.dist} km içinde) istasyon bulunamadı.
             En yakın istasyon: <strong>{nearbyPrompt.station.name}</strong> (~{nearbyPrompt.dist} km uzakta).
             Oraya gitmek ister misiniz?
           </span>
@@ -401,28 +401,28 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
         </div>
       )}
 
-      {/* ── Filter Bar ── */}
-      <div className="bg-slate-900 border-b border-slate-700 px-4 py-2 flex flex-wrap items-center gap-2 shrink-0">
-        <span className="text-xs font-semibold text-slate-400 hidden sm:inline">Filtreler:</span>
+      {/*  Filter Bar  */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex flex-wrap items-center gap-2 shrink-0">
+        <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Filtreler:</span>
         {selectedVehicle && !readOnly && (
-          <span className="text-xs bg-emerald-900/50 border border-emerald-700 text-emerald-300 px-2 py-1 rounded-lg">
-            🚗 {selectedVehicle.brand} {selectedVehicle.model} · {selectedVehicle.connector_type || selectedVehicle.connector}
+          <span className="text-xs bg-blue-50 border border-blue-200 text-blue-700 px-2 py-1 rounded-lg">
+             {selectedVehicle.brand} {selectedVehicle.model} · {selectedVehicle.connector_type || selectedVehicle.connector}
           </span>
         )}
         {readOnly && (
-          <span className="text-xs bg-slate-700 border border-slate-600 text-slate-400 px-2 py-1 rounded-lg">
-            👁 Görüntüleme modu
+          <span className="text-xs bg-gray-100 border border-gray-300 text-gray-500 px-2 py-1 rounded-lg">
+             Görüntüleme modu
           </span>
         )}
 
         <select value={filterConn} onChange={e => setFilterConn(e.target.value)}
-          className="text-xs sm:text-sm bg-slate-800 border border-slate-600 text-white rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none">
+          className="text-xs sm:text-sm bg-white border border-gray-300 text-gray-900 rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-none">
           <option value="all">Tüm Konektörler</option>
           {connectorTypes.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
 
         <select value={filterPow} onChange={e => setFilterPow(e.target.value)}
-          className="text-xs sm:text-sm bg-slate-800 border border-slate-600 text-white rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 flex-1 sm:flex-none">
+          className="text-xs sm:text-sm bg-white border border-gray-300 text-gray-900 rounded-lg px-2 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 sm:flex-none">
           <option value="all">Tüm Güç Seviyeleri</option>
           <option value="slow">AC Yavaş (≤22 kW)</option>
           <option value="fast">DC Hızlı (50 kW)</option>
@@ -435,15 +435,15 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
             className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
               showFavOnly
                 ? 'bg-pink-700 border-pink-600 text-white'
-                : 'bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            {showFavOnly ? '❤️ Favorilerim' : '🤍 Favorilerim'}
+            {showFavOnly ? ' Favorilerim' : ' Favorilerim'}
           </button>
         )}
 
 
-        <div className="hidden sm:flex ml-auto items-center gap-3 text-xs text-slate-400 flex-wrap">
+        <div className="hidden sm:flex ml-auto items-center gap-3 text-xs text-gray-500 flex-wrap">
           {[
             { key: 'available',   label: 'Müsait' },
             { key: 'occupied',    label: 'Dolu' },
@@ -458,22 +458,22 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           ))}
           <button
             onClick={() => getStations().then(setStations).catch(() => {})}
-            className="ml-2 text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded-lg transition-colors"
+            className="ml-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-lg transition-colors"
             title="Listeyi yenile"
-          >🔄</button>
+          ></button>
         </div>
       </div>
 
-      {/* ── Map + Right Panel ── */}
+      {/*  Map + Right Panel  */}
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
 
         {/* Map */}
         <div className="h-[55vh] md:h-auto md:flex-1 relative shrink-0 md:shrink">
           {!isLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-800 z-10">
+            <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
               <div className="text-center">
-                <div className="text-4xl mb-3 animate-pulse">🗺️</div>
-                <p className="text-slate-400 text-sm">Google Maps yükleniyor…</p>
+                <div className="text-4xl mb-3 animate-pulse"></div>
+                <p className="text-gray-500 text-sm">Google Maps yükleniyor…</p>
               </div>
             </div>
           )}
@@ -526,23 +526,23 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                   >
                     <div className="text-sm max-w-[200px]">
                       <p className="font-bold text-slate-900 mb-0.5">{infoStation.name}</p>
-                      <p className="text-slate-500 text-xs mb-2">{infoStation.address}</p>
-                      <div className="flex gap-3 text-xs text-slate-600 mb-2">
-                        <span>⚡ {(infoStation.chargers || []).filter(c => c.status === 'available').length}/{(infoStation.chargers || []).length} müsait</span>
+                      <p className="text-gray-400 text-xs mb-2">{infoStation.address}</p>
+                      <div className="flex gap-3 text-xs text-gray-400 mb-2">
+                        <span> {(infoStation.chargers || []).filter(c => c.status === 'available').length}/{(infoStation.chargers || []).length} müsait</span>
                       </div>
                       <div className="flex gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg px-2 py-1.5 mb-3 text-blue-700">
-                        <span>📍 {distLabel}</span>
+                        <span> {distLabel}</span>
                         <span>·</span>
-                        <span>🕐 {timeLabel}</span>
+                        <span> {timeLabel}</span>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleShowRoute(infoStation)}
                           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors">
-                          🗺️ Yol Tarifi
+                           Yol Tarifi
                         </button>
                         <button
                           onClick={() => { setSelectedStation(infoStation); setInfoStation(null); }}
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors">
+                          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-1.5 px-2 rounded-lg transition-colors">
                           Seç
                         </button>
                       </div>
@@ -555,16 +555,16 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           )}
         </div>
 
-        {/* ── Right Panel ── */}
-        <div className="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-slate-700 flex flex-col overflow-hidden md:shrink-0">
-          <div className="px-4 py-3 border-b border-slate-700">
-            <p className="text-sm font-semibold text-white">{filtered.length} istasyon bulundu</p>
-            <p className="text-xs text-slate-400">
-              {locReady ? '📍 Konumunuza göre' : 'İzmir, Türkiye'}
+        {/*  Right Panel  */}
+        <div className="w-full md:w-80 bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col overflow-hidden md:shrink-0">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <p className="text-sm font-semibold text-gray-900">{filtered.length} istasyon bulundu</p>
+            <p className="text-xs text-gray-500">
+              {locReady ? ' Konumunuza göre' : 'İzmir, Türkiye'}
             </p>
           </div>
 
-          {/* ── En çok kullanılan istasyon kartı ── */}
+          {/*  En çok kullanılan istasyon kartı  */}
           {topStation && (
             <div
               className="mx-3 mt-3 mb-1 bg-purple-900/30 border border-purple-700 rounded-xl px-3 py-2.5 cursor-pointer hover:bg-purple-900/50 transition-colors"
@@ -573,9 +573,9 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                 if (full) { handleStationSelect(full); }
               }}
             >
-              <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide mb-1">⭐ En Çok Kullandığınız İstasyon</p>
-              <p className="text-sm font-semibold text-white">{topStation.name}</p>
-              <p className="text-xs text-slate-400">{topStation.address}</p>
+              <p className="text-[10px] text-purple-400 font-semibold uppercase tracking-wide mb-1"> En Çok Kullandığınız İstasyon</p>
+              <p className="text-sm font-semibold text-gray-900">{topStation.name}</p>
+              <p className="text-xs text-gray-500">{topStation.address}</p>
               <p className="text-xs text-purple-300 mt-1">{topStation.session_count} tamamlanmış şarj</p>
             </div>
           )}
@@ -587,26 +587,26 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
               const active = selectedStation?.id === station.id;
               return (
                 <div key={station.id} onClick={() => handleStationSelect(station)}
-                  className={`p-4 border-b border-slate-800 cursor-pointer transition-colors ${
-                    active ? 'bg-emerald-900/30 border-l-4 border-l-emerald-500' : 'hover:bg-slate-800'
+                  className={`p-4 border-b border-gray-100 cursor-pointer transition-colors ${
+                    active ? 'bg-blue-900/30 border-l-4 border-l-blue-500' : 'hover:bg-white'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <p className="font-medium text-sm text-white truncate">{station.name}</p>
+                      <p className="font-medium text-sm text-gray-900 truncate">{station.name}</p>
                       {topStation?.id === station.id && (
-                        <span className="shrink-0 text-[10px] bg-purple-900/60 border border-purple-700 text-purple-300 px-1.5 py-0.5 rounded-full">⭐</span>
+                        <span className="shrink-0 text-[10px] bg-purple-900/60 border border-purple-700 text-purple-300 px-1.5 py-0.5 rounded-full"></span>
                       )}
                     </div>
-                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[status] || 'bg-slate-700 text-slate-300'}`}>
+                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[status] || 'bg-gray-100 text-gray-700'}`}>
                       {STATUS_LABEL[status] ?? status}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">{station.address}</p>
-                  <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
+                  <p className="text-xs text-gray-500 mt-0.5">{station.address}</p>
+                  <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
                     <div className="flex gap-3">
-                      <span>⚡ {avail}/{(station.chargers || []).length} müsait</span>
-                      <span>📍 {(() => { const d = distanceKm(userLocation, { lat: parseFloat(station.lat), lng: parseFloat(station.lng) }); return d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`; })()}</span>
+                      <span> {avail}/{(station.chargers || []).length} müsait</span>
+                      <span> {(() => { const d = distanceKm(userLocation, { lat: parseFloat(station.lat), lng: parseFloat(station.lng) }); return d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`; })()}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {user?.role === 'driver' && (
@@ -618,7 +618,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                           }`}
                           title={favoriteIds.has(station.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
                         >
-                          {favoriteIds.has(station.id) ? '❤️' : '🤍'}
+                          {favoriteIds.has(station.id) ? '' : ''}
                         </button>
                       )}
                       <button
@@ -633,9 +633,9 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
           </div>
 
           {selectedStation && (
-            <div className="border-t border-slate-700 bg-slate-800 p-4 shrink-0">
+            <div className="border-t border-gray-200 bg-white p-4 shrink-0">
               <div className="flex items-start justify-between mb-0.5">
-                <p className="font-semibold text-white text-sm">{selectedStation.name}</p>
+                <p className="font-semibold text-gray-900 text-sm">{selectedStation.name}</p>
                 {user?.role === 'driver' && (
                   <button
                     onClick={(e) => handleToggleFavorite(e, selectedStation.id)}
@@ -645,11 +645,11 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                     }`}
                     title={favoriteIds.has(selectedStation.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
                   >
-                    {favoriteIds.has(selectedStation.id) ? '❤️' : '🤍'}
+                    {favoriteIds.has(selectedStation.id) ? '' : ''}
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mb-3">{selectedStation.address}</p>
+              <p className="text-xs text-gray-500 mb-3">{selectedStation.address}</p>
 
               <div className="space-y-1.5 mb-4">
                 {(selectedStation.chargers || []).map((c) => {
@@ -657,14 +657,14 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                     (selectedVehicle.connector_type || selectedVehicle.connector) === c.connector_type;
                   return (
                     <div key={c.id}
-                      className="flex items-center gap-2 text-xs bg-slate-700/50 border border-slate-700 rounded-lg px-3 py-2">
+                      className="flex items-center gap-2 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_COLOR[c.status] || '#6b7280' }} />
-                      <span className="font-mono text-slate-300 flex-1">{c.charger_code}</span>
-                      <span className="text-slate-400">{c.type} {c.power}kW</span>
-                      <span className="text-slate-500">{c.connector_type}</span>
+                      <span className="font-mono text-gray-700 flex-1">{c.charger_code}</span>
+                      <span className="text-gray-500">{c.type} {c.power}kW</span>
+                      <span className="text-gray-400">{c.connector_type}</span>
                       {!readOnly && selectedVehicle && (
-                        <span className={compatible ? 'text-emerald-400 font-bold' : 'text-red-400'}>
-                          {compatible ? '✓' : '✗'}
+                        <span className={compatible ? 'text-blue-400 font-bold' : 'text-red-400'}>
+                          {compatible ? '' : ''}
                         </span>
                       )}
                     </div>
@@ -675,12 +675,12 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
               {!readOnly && (
                 <button
                   onClick={() => {
-                    if (!selectedVehicle) { alert('⚠️ Önce "Araçlarım" bölümünden bir araç seçin!'); return; }
+                    if (!selectedVehicle) { alert(' Önce "Araçlarım" bölümünden bir araç seçin!'); return; }
                     setView('reservation');
                   }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
                 >
-                  {selectedVehicle ? 'Rezervasyon Yap →' : '⚠️ Önce araç seçin'}
+                  {selectedVehicle ? 'Rezervasyon Yap →' : ' Önce araç seçin'}
                 </button>
               )}
 
@@ -699,11 +699,11 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                       <div>
                         {myEntry.status === 'notified' ? (
                           <>
-                            <p className="text-blue-200 text-xs font-semibold">🔔 Sıranız Geldi!</p>
+                            <p className="text-blue-200 text-xs font-semibold"> Sıranız Geldi!</p>
                             <p className="text-blue-300 text-xs mt-0.5">30 dk içinde rezervasyon yapın!</p>
                           </>
                         ) : (
-                          <p className="text-blue-300 text-xs font-semibold">🕐 Kuyruktasınız — {myEntry.position}. sıra</p>
+                          <p className="text-blue-300 text-xs font-semibold"> Kuyruktasınız — {myEntry.position}. sıra</p>
                         )}
                       </div>
                       <button
@@ -722,7 +722,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                     disabled={queueLoading}
                     className="w-full mt-2 bg-blue-900/40 hover:bg-blue-800/60 border border-blue-700 text-blue-300 text-sm font-medium py-2.5 rounded-xl transition-colors disabled:opacity-50"
                   >
-                    🔔 Kuyruğa Katıl
+                     Kuyruğa Katıl
                   </button>
                 );
               })()}
@@ -731,9 +731,9 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
               {user && (
                 <button
                   onClick={() => setIssueStation(selectedStation)}
-                  className="w-full mt-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-orange-400 text-sm font-medium py-2 rounded-xl transition-colors"
+                  className="w-full mt-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-orange-400 text-sm font-medium py-2 rounded-xl transition-colors"
                 >
-                  ⚠️ Sorun Bildir
+                   Sorun Bildir
                 </button>
               )}
             </div>

@@ -3,23 +3,28 @@ import { useAuth } from '../context/AuthContext';
 import { register as apiRegister } from '../services/api';
 
 const DEMO_ACCOUNTS = [
-  { role: 'admin',      label: 'Admin',      icon: '🛡️', email: 'admin@ev.com',  password: 'Admin123!',    color: 'from-purple-600 to-purple-700',  border: 'border-purple-500', text: 'text-purple-300' },
-  { role: 'operator',   label: 'Operatör',   icon: '🏢', email: 'op1@ev.com',    password: 'Operator1!',   color: 'from-blue-600 to-blue-700',      border: 'border-blue-500',   text: 'text-blue-300' },
-  { role: 'technician', label: 'Teknisyen',  icon: '🔧', email: 'tech@ev.com',   password: 'Tech123!',     color: 'from-amber-600 to-amber-700',    border: 'border-amber-500',  text: 'text-amber-300' },
-  { role: 'driver',     label: 'Sürücü',     icon: '🚗', email: 'driver@ev.com', password: 'Driver123!',   color: 'from-emerald-600 to-emerald-700',border: 'border-emerald-500',text: 'text-emerald-300' },
+  { role: 'admin',      label: 'Yonetici',  badge: 'bg-purple-100 text-purple-700', email: 'admin@ev.com',  password: 'Admin123!'  },
+  { role: 'operator',   label: 'Operator',  badge: 'bg-blue-100 text-blue-700',     email: 'op1@ev.com',    password: 'Operator1!' },
+  { role: 'technician', label: 'Teknisyen', badge: 'bg-amber-100 text-amber-700',   email: 'tech@ev.com',   password: 'Tech123!'   },
+  { role: 'driver',     label: 'Surucu',    badge: 'bg-green-100 text-green-700',   email: 'driver@ev.com', password: 'Driver123!' },
 ];
+
+const BoltIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>
+);
 
 export default function Login() {
   const { login } = useAuth();
-  const [tab, setTab]           = useState('demo'); // 'demo' | 'login' | 'register'
+  const [tab, setTab]           = useState('demo');
   const [form, setForm]         = useState({ name: '', email: '', password: '' });
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
-  const [selected, setSelected] = useState(null); // role string
+  const [selected, setSelected] = useState(null);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  // Quick-login with demo account
   const handleDemoLogin = async (account) => {
     setError('');
     setLoading(true);
@@ -52,31 +57,35 @@ export default function Login() {
     }
   };
 
+  const inputClass = "w-full bg-white border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 transition";
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-8 text-center">
-          <div className="text-4xl mb-2">⚡</div>
-          <h1 className="text-2xl font-bold text-white">EV Charge Network</h1>
-          <p className="text-emerald-100 text-sm mt-1">İzmir Şarj İstasyonu Yönetimi</p>
+        <div className="bg-blue-600 px-8 py-7 text-center">
+          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <BoltIcon />
+          </div>
+          <h1 className="text-xl font-bold text-white">EV Charge Network</h1>
+          <p className="text-blue-100 text-sm mt-1">Izmir Sarj Istasyonu Yonetimi</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700">
+        <div className="flex border-b border-gray-200 bg-white">
           {[
-            { key: 'demo',     label: '🚀 Demo Giriş' },
-            { key: 'login',    label: 'Giriş Yap' },
-            { key: 'register', label: 'Kayıt Ol' },
+            { key: 'demo',     label: 'Demo Giris' },
+            { key: 'login',    label: 'Giris Yap' },
+            { key: 'register', label: 'Kayit Ol' },
           ].map(t => (
             <button
               key={t.key}
               onClick={() => { setTab(t.key); setError(''); setSelected(null); }}
               className={`flex-1 py-3 text-xs font-medium transition-colors ${
                 tab === t.key
-                  ? 'text-emerald-400 border-b-2 border-emerald-400'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
               {t.label}
@@ -87,8 +96,8 @@ export default function Login() {
         {/* ── Demo tab ── */}
         {tab === 'demo' && (
           <div className="p-6">
-            <p className="text-slate-400 text-xs text-center mb-4">
-              Rol seçin ve otomatik giriş yapın
+            <p className="text-gray-500 text-xs text-center mb-4">
+              Rol secin ve otomatik giris yapin
             </p>
 
             <div className="grid grid-cols-2 gap-3">
@@ -97,26 +106,26 @@ export default function Login() {
                   key={acc.role}
                   onClick={() => handleDemoLogin(acc)}
                   disabled={loading}
-                  className={`relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all text-left
                     ${selected === acc.role
-                      ? `bg-gradient-to-br ${acc.color} ${acc.border} scale-95 opacity-80`
-                      : `bg-slate-800 border-slate-700 hover:${acc.border} hover:bg-slate-750`
+                      ? 'border-blue-500 bg-blue-50 scale-95'
+                      : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-gray-50'
                     }
                     disabled:opacity-50 disabled:cursor-wait`}
                 >
-                  <span className="text-3xl">{acc.icon}</span>
-                  <span className={`text-sm font-semibold ${selected === acc.role ? 'text-white' : acc.text}`}>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${acc.badge}`}>
                     {acc.label}
                   </span>
+                  <span className="text-xs text-gray-400 font-mono truncate w-full text-center">{acc.email}</span>
                   {selected === acc.role && loading && (
-                    <span className="text-[10px] text-white/70 animate-pulse">Giriş yapılıyor…</span>
+                    <span className="text-[10px] text-blue-500 animate-pulse">Giris yapiliyor...</span>
                   )}
                 </button>
               ))}
             </div>
 
             {error && (
-              <div className="mt-4 bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
                 {error}
               </div>
             )}
@@ -127,39 +136,39 @@ export default function Login() {
         {tab === 'login' && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">E-posta</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">E-posta</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={set('email')}
                 required
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className={inputClass}
                 placeholder="ornek@email.com"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Şifre</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Sifre</label>
               <input
                 type="password"
                 value={form.password}
                 onChange={set('password')}
                 required
                 minLength={6}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className={inputClass}
                 placeholder="••••••••"
               />
             </div>
             {error && (
-              <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
                 {error}
               </div>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? 'Lütfen bekleyin...' : 'Giriş Yap'}
+              {loading ? 'Lutfen bekleyin...' : 'Giris Yap'}
             </button>
           </form>
         )}
@@ -168,50 +177,50 @@ export default function Login() {
         {tab === 'register' && (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Ad Soyad</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Ad Soyad</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={set('name')}
                 required
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
-                placeholder="Adınız Soyadınız"
+                className={inputClass}
+                placeholder="Adiniz Soyadiniz"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">E-posta</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">E-posta</label>
               <input
                 type="email"
                 value={form.email}
                 onChange={set('email')}
                 required
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className={inputClass}
                 placeholder="ornek@email.com"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Şifre</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">Sifre</label>
               <input
                 type="password"
                 value={form.password}
                 onChange={set('password')}
                 required
                 minLength={6}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className={inputClass}
                 placeholder="••••••••"
               />
             </div>
             {error && (
-              <div className="bg-red-900/40 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
                 {error}
               </div>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition-colors"
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors text-sm"
             >
-              {loading ? 'Lütfen bekleyin...' : 'Kayıt Ol'}
+              {loading ? 'Lutfen bekleyin...' : 'Kayit Ol'}
             </button>
           </form>
         )}

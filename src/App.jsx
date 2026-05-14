@@ -25,7 +25,7 @@ function AppInner() {
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  /* ── Global state ── */
+  /*  Global state  */
   const [view, setView] = useState(() => {
     try { if (localStorage.getItem('ev_active_session')) return 'session'; } catch {}
     try {
@@ -86,10 +86,10 @@ function AppInner() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <div className="text-5xl mb-4 animate-pulse">⚡</div>
-          <p className="text-slate-400">Yükleniyor…</p>
+          <div className="text-5xl mb-4 animate-pulse"></div>
+          <p className="text-gray-500">Yükleniyor…</p>
         </div>
       </div>
     );
@@ -100,7 +100,7 @@ function AppInner() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar view={view} setView={handleSetView} hasSession={!!activeSession} />
 
       {/* pb-16 on mobile = space for fixed bottom nav */}
@@ -109,7 +109,7 @@ function AppInner() {
           ? 'flex flex-col' : ''
       }`}>
 
-        {/* ── Driver views ── */}
+        {/*  Driver views  */}
         {view === 'vehicles' && (
           <VehicleRegistration
             vehicles={vehicles}               setVehicles={setVehicles}
@@ -150,7 +150,7 @@ function AppInner() {
 
         {view === 'myreservations' && <MyReservations setView={handleSetView} />}
 
-        {/* ── Admin views — her sekme ayrı sayfa ── */}
+        {/*  Admin views — her sekme ayrı sayfa  */}
         {['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-vehicles','admin-issues'].includes(view) && (
           <AdminDashboard tab={view.replace('admin-','')} isLoaded={isLoaded} />
         )}
@@ -165,7 +165,7 @@ function AppInner() {
           />
         )}
 
-        {/* ── Operator views ── */}
+        {/*  Operator views  */}
         {view === 'operator' && <OperatorDashboard isLoaded={isLoaded} />}
         {view === 'operator-map' && (
           <StationMap
@@ -178,13 +178,13 @@ function AppInner() {
           />
         )}
 
-        {/* ── Technician views ── */}
+        {/*  Technician views  */}
         {view === 'technician' && (
           <TechnicianView />
         )}
       </main>
 
-      {/* ── Demo time widget — admin & driver ── */}
+      {/*  Demo time widget — admin & driver  */}
       {(user.role === 'admin' || user.role === 'driver') && <DemoTimeWidget />}
     </div>
   );

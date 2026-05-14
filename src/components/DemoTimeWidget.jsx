@@ -40,7 +40,7 @@ export default function DemoTimeWidget() {
       const d = await addDemoTime(seconds);
       setDemoTime(d.demo_time_tr);
       setOffset(d.offset_seconds);
-      setFeedback('✓ Güncellendi');
+      setFeedback(' Güncellendi');
     } catch (e) {
       setFeedback('Hata: ' + e.message);
     } finally {
@@ -56,7 +56,7 @@ export default function DemoTimeWidget() {
       const d = await resetDemoTime();
       setDemoTime(d.demo_time_tr);
       setOffset(0);
-      setFeedback('✓ Sıfırlandı');
+      setFeedback(' Sıfırlandı');
     } catch (e) {
       setFeedback('Hata: ' + e.message);
     } finally {
@@ -76,7 +76,7 @@ export default function DemoTimeWidget() {
           className="flex items-center gap-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-mono px-3 py-1.5 rounded-full shadow-lg transition-colors"
           title="Demo zaman kontrolü"
         >
-          <span>🕐</span>
+          <span></span>
           <span>{demoTime || '…'}</span>
           {offset !== 0 && (
             <span className="bg-indigo-500 px-1.5 py-0.5 rounded-full text-[10px]">
@@ -88,12 +88,12 @@ export default function DemoTimeWidget() {
 
       {/* Expanded panel */}
       {open && (
-        <div className="bg-slate-800 border border-slate-600 rounded-xl shadow-2xl w-72 p-4">
+        <div className="bg-white border border-gray-300 rounded-xl shadow-2xl w-72 p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Demo Saati</p>
-              <p className="text-white font-mono text-sm font-semibold">{demoTime || '…'}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider">Demo Saati</p>
+              <p className="text-gray-900 font-mono text-sm font-semibold">{demoTime || '…'}</p>
               {offset !== 0 && (
                 <p className="text-indigo-400 text-[11px] mt-0.5">
                   Gerçek saatten +{offsetHours} saat ilerde
@@ -102,7 +102,7 @@ export default function DemoTimeWidget() {
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="text-slate-400 hover:text-white text-lg leading-none"
+              className="text-gray-500 hover:text-white text-lg leading-none"
             >×</button>
           </div>
 
@@ -124,14 +124,14 @@ export default function DemoTimeWidget() {
           <button
             onClick={handleReset}
             disabled={loading || offset === 0}
-            className="w-full bg-slate-600 hover:bg-slate-500 disabled:opacity-40 text-white text-xs py-1.5 rounded-lg transition-colors"
+            className="w-full bg-gray-600 hover:bg-gray-500 disabled:opacity-40 text-white text-xs py-1.5 rounded-lg transition-colors"
           >
-            🔄 Gerçek Saate Döndür
+             Gerçek Saate Döndür
           </button>
 
           {/* Feedback */}
           {feedback && (
-            <p className={`text-center text-xs mt-2 ${feedback.startsWith('✓') ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-center text-xs mt-2 ${feedback.startsWith('') ? 'text-green-400' : 'text-red-400'}`}>
               {feedback}
             </p>
           )}

@@ -4,11 +4,11 @@ import { getWallet, topUpWallet } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const TXN_TYPE = {
-  credit: { label: 'Gelir', color: 'text-emerald-400', sign: '+' },
+  credit: { label: 'Gelir', color: 'text-blue-400', sign: '+' },
   debit:  { label: 'Gider', color: 'text-red-400',     sign: '-' },
 };
 
-// ── Input formatters ──────────────────────────────────────────
+//  Input formatters 
 const formatCard = (val) => {
   const digits = val.replace(/\D/g, '').slice(0, 16);
   return digits.replace(/(.{4})(?=.)/g, '$1 ');
@@ -81,16 +81,16 @@ export default function WalletPage() {
     }
   };
 
-  // ── "Bankadan haber bekleniyor" loading overlay ──
+  //  "Bankadan haber bekleniyor" loading overlay 
   const loadingOverlay = loading && createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999]">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8 text-center shadow-2xl max-w-xs w-full mx-4">
-        <div className="text-5xl mb-4 animate-bounce">🏦</div>
-        <p className="text-white font-semibold text-lg mb-1">Bankadan haber bekleniyor…</p>
-        <p className="text-slate-400 text-sm mb-5">Lütfen bekleyin, ödemeniz işleniyor.</p>
+      <div className="bg-white border border-gray-200 rounded-lg p-8 text-center shadow-2xl max-w-xs w-full mx-4">
+        <div className="text-5xl mb-4 animate-bounce"></div>
+        <p className="text-gray-900 font-semibold text-lg mb-1">Bankadan haber bekleniyor…</p>
+        <p className="text-gray-500 text-sm mb-5">Lütfen bekleyin, ödemeniz işleniyor.</p>
         <div className="flex justify-center gap-1.5">
           {[0,1,2,3].map(i => (
-            <div key={i} className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce"
+            <div key={i} className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
               style={{ animationDelay: `${i * 0.15}s` }} />
           ))}
         </div>
@@ -99,33 +99,33 @@ export default function WalletPage() {
     document.body
   );
 
-  // ── Top-up modal ──
+  //  Top-up modal 
   const topUpModal = showTopUp && createPortal(
     <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9998] p-4"
       onClick={(e) => { if (e.target === e.currentTarget && !loading) setShowTopUp(false); }}
     >
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-700">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <span>💳</span> Bakiye Yükle
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <span></span> Bakiye Yükle
           </h3>
           <button onClick={() => setShowTopUp(false)} disabled={loading}
-            className="text-slate-400 hover:text-white text-xl disabled:opacity-30">✕</button>
+            className="text-gray-500 hover:text-white text-xl disabled:opacity-30"></button>
         </div>
 
         <form onSubmit={handleTopUp} className="p-5 space-y-4">
           {/* Card number */}
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Kart Numarası</label>
+            <label className="block text-xs text-gray-500 mb-1">Kart Numarası</label>
             <input
               type="text"
               inputMode="numeric"
               value={form.card_number}
               onChange={(e) => setForm(f => ({ ...f, card_number: formatCard(e.target.value) }))}
               required maxLength={19}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-emerald-500"
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-blue-500"
               placeholder="1234 5678 9012 3456"
             />
           </div>
@@ -133,7 +133,7 @@ export default function WalletPage() {
           {/* Expiry + CVV */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Son Kullanma</label>
+              <label className="block text-xs text-gray-500 mb-1">Son Kullanma</label>
               <input
                 type="text"
                 inputMode="numeric"
@@ -143,19 +143,19 @@ export default function WalletPage() {
                   setForm(f => ({ ...f, expiry: next }));
                 }}
                 required maxLength={5}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-500"
                 placeholder="AA/YY"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">CVV</label>
+              <label className="block text-xs text-gray-500 mb-1">CVV</label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={form.cvv}
                 onChange={(e) => setForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
                 required maxLength={3}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
+                className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-500"
                 placeholder="123"
               />
             </div>
@@ -163,13 +163,13 @@ export default function WalletPage() {
 
           {/* Amount */}
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Yüklenecek Miktar (TL)</label>
+            <label className="block text-xs text-gray-500 mb-1">Yüklenecek Miktar (TL)</label>
             <input
               type="number"
               value={form.amount}
               onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
               required min={1} max={5000} step={1}
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
               placeholder="500"
             />
           </div>
@@ -180,15 +180,15 @@ export default function WalletPage() {
 
           <div className="flex gap-3 pt-1">
             <button type="submit" disabled={loading}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors">
+              className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors">
               Ödemeyi Onayla
             </button>
             <button type="button" onClick={() => setShowTopUp(false)} disabled={loading}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-30 text-white font-semibold py-2.5 rounded-lg transition-colors">
+              className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-30 text-white font-semibold py-2.5 rounded-lg transition-colors">
               İptal
             </button>
           </div>
-          <p className="text-xs text-slate-500 text-center">Bu ödeme simülasyondur — kart bilgileri doğrulanmaz</p>
+          <p className="text-xs text-gray-400 text-center">Bu ödeme simülasyondur — kart bilgileri doğrulanmaz</p>
         </form>
       </div>
     </div>,
@@ -200,48 +200,48 @@ export default function WalletPage() {
       {loadingOverlay}
       {topUpModal}
 
-      <h2 className="text-2xl font-bold text-white">Cüzdan</h2>
+      <h2 className="text-2xl font-bold text-gray-900">Cüzdan</h2>
 
       {/* Balance card */}
-      <div className="bg-gradient-to-br from-emerald-700 to-teal-800 rounded-2xl p-6 shadow-xl">
-        <p className="text-emerald-200 text-sm mb-1">Mevcut Bakiye</p>
-        <p className="text-4xl font-bold text-white">
+      <div className="bg-gradient-to-br from-blue-700 to-teal-800 rounded-lg p-6 shadow-xl">
+        <p className="text-blue-200 text-sm mb-1">Mevcut Bakiye</p>
+        <p className="text-4xl font-bold text-gray-900">
           {wallet.balance.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
           <span className="text-xl ml-1">TL</span>
         </p>
         {wallet.balance < 200 && (
-          <p className="mt-2 text-yellow-300 text-sm">⚠️ Bakiyeniz 200 TL altında – lütfen yükleyin</p>
+          <p className="mt-2 text-yellow-300 text-sm"> Bakiyeniz 200 TL altında – lütfen yükleyin</p>
         )}
         <button
           onClick={() => { setShowTopUp(true); setError(''); setSuccess(''); }}
-          className="mt-4 bg-white/20 hover:bg-white/30 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm"
+          className="mt-4 bg-white/20 hover:bg-white/30 text-gray-900 font-semibold px-6 py-2 rounded-lg transition-colors text-sm"
         >
           + Bakiye Yükle
         </button>
       </div>
 
       {success && (
-        <div className="bg-emerald-900/40 border border-emerald-700 rounded-lg p-3 text-emerald-300 text-sm">
-          ✅ {success}
+        <div className="bg-blue-900/40 border border-blue-700 rounded-lg p-3 text-blue-300 text-sm">
+           {success}
         </div>
       )}
 
       {/* Transaction history */}
-      <div className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700">
-        <div className="px-5 py-4 border-b border-slate-700">
-          <h3 className="text-white font-semibold">İşlem Geçmişi</h3>
+      <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+        <div className="px-5 py-4 border-b border-gray-200">
+          <h3 className="text-gray-900 font-semibold">İşlem Geçmişi</h3>
         </div>
         {wallet.transactions.length === 0 ? (
-          <p className="text-center text-slate-400 text-sm py-8">Henüz işlem yok</p>
+          <p className="text-center text-gray-500 text-sm py-8">Henüz işlem yok</p>
         ) : (
-          <div className="divide-y divide-slate-700">
+          <div className="divide-y divide-gray-200">
             {wallet.transactions.map(tx => {
               const t = TXN_TYPE[tx.type] || { label: tx.type, color: 'text-white', sign: '' };
               return (
                 <div key={tx.id} className="flex items-center justify-between px-5 py-3">
                   <div>
-                    <p className="text-sm text-white">{tx.description}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-sm text-gray-900">{tx.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {new Date(tx.created_at).toLocaleString('tr-TR')}
                     </p>
                   </div>
@@ -249,7 +249,7 @@ export default function WalletPage() {
                     <p className={`font-semibold text-sm ${t.color}`}>
                       {t.sign}{Math.abs(tx.amount).toFixed(2)} TL
                     </p>
-                    <p className="text-xs text-slate-500">Bakiye: {parseFloat(tx.balance_after).toFixed(2)} TL</p>
+                    <p className="text-xs text-gray-400">Bakiye: {parseFloat(tx.balance_after).toFixed(2)} TL</p>
                   </div>
                 </div>
               );
