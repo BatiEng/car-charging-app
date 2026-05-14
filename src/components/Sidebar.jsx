@@ -102,32 +102,32 @@ const IconLogout = () => (
 
 /* ── Nav definitions ── */
 const DRIVER_NAV = [
-  { id: 'vehicles',       label: 'Araçlar',    fullLabel: 'Araçlarım',          Icon: IconCar      },
-  { id: 'map',            label: 'Harita',     fullLabel: 'İstasyon Bul',        Icon: IconMap      },
-  { id: 'reservation',    label: 'Rezerve',    fullLabel: 'Rezervasyon',         Icon: IconCalendar },
-  { id: 'myreservations', label: 'Listesi',    fullLabel: 'Rezervasyonlarım',    Icon: IconList     },
-  { id: 'session',        label: 'Sarj',       fullLabel: 'Sarj Oturumu',        Icon: IconBolt     },
-  { id: 'wallet',         label: 'Cuzdan',     fullLabel: 'Cuzdan',              Icon: IconWallet   },
+  { id: 'vehicles',       label: 'Vehicles',  fullLabel: 'My Vehicles',        Icon: IconCar      },
+  { id: 'map',            label: 'Map',        fullLabel: 'Find Station',        Icon: IconMap      },
+  { id: 'reservation',    label: 'Reserve',    fullLabel: 'Reservation',         Icon: IconCalendar },
+  { id: 'myreservations', label: 'History',    fullLabel: 'My Reservations',     Icon: IconList     },
+  { id: 'session',        label: 'Charging',   fullLabel: 'Charging Session',    Icon: IconBolt     },
+  { id: 'wallet',         label: 'Wallet',     fullLabel: 'Wallet',              Icon: IconWallet   },
 ];
 
 const ADMIN_NAV = [
-  { id: 'admin-users',        label: 'Kullanicilar',   fullLabel: 'Kullanicilar',        Icon: IconUsers    },
-  { id: 'admin-stations',     label: 'Istasyonlar',    fullLabel: 'Istasyonlar',         Icon: IconBuilding },
-  { id: 'admin-reservations', label: 'Rezervasyonlar', fullLabel: 'Rezervasyonlar',      Icon: IconCalendar },
-  { id: 'admin-sessions',     label: 'Oturumlar',      fullLabel: 'Sarj Oturumlari',     Icon: IconBolt     },
-  { id: 'admin-revenue',      label: 'Gelir',          fullLabel: 'Gelir Raporu',        Icon: IconBarChart },
-  { id: 'admin-vehicles',     label: 'Araclar',        fullLabel: 'Kullanici Araclari',  Icon: IconCar      },
-  { id: 'admin-issues',       label: 'Arizalar',       fullLabel: 'Arizalar & Sorunlar', Icon: IconAlert    },
-  { id: 'admin-map',          label: 'Harita',         fullLabel: 'Istasyon Haritasi',   Icon: IconMap      },
+  { id: 'admin-users',        label: 'Users',        fullLabel: 'Users',                Icon: IconUsers    },
+  { id: 'admin-stations',     label: 'Stations',     fullLabel: 'Stations',             Icon: IconBuilding },
+  { id: 'admin-reservations', label: 'Reservations', fullLabel: 'Reservations',         Icon: IconCalendar },
+  { id: 'admin-sessions',     label: 'Sessions',     fullLabel: 'Charging Sessions',    Icon: IconBolt     },
+  { id: 'admin-revenue',      label: 'Revenue',      fullLabel: 'Revenue Report',       Icon: IconBarChart },
+  { id: 'admin-vehicles',     label: 'Vehicles',     fullLabel: 'User Vehicles',        Icon: IconCar      },
+  { id: 'admin-issues',       label: 'Issues',       fullLabel: 'Issues & Problems',    Icon: IconAlert    },
+  { id: 'admin-map',          label: 'Map',          fullLabel: 'Station Map',          Icon: IconMap      },
 ];
 
 const OPERATOR_NAV = [
-  { id: 'operator',     label: 'Istasyonum', fullLabel: 'Istasyonlarim',     Icon: IconBuilding },
-  { id: 'operator-map', label: 'Harita',     fullLabel: 'Istasyon Haritasi', Icon: IconMap      },
+  { id: 'operator',     label: 'Stations', fullLabel: 'My Stations',   Icon: IconBuilding },
+  { id: 'operator-map', label: 'Map',      fullLabel: 'Station Map',   Icon: IconMap      },
 ];
 
 const TECHNICIAN_NAV = [
-  { id: 'technician', label: 'Harita', fullLabel: 'Teknisyen Gorunumu', Icon: IconTool },
+  { id: 'technician', label: 'Map', fullLabel: 'Technician View', Icon: IconTool },
 ];
 
 function getNav(role) {
@@ -138,10 +138,10 @@ function getNav(role) {
 }
 
 const ROLE_LABELS = {
-  admin:      'Yonetici',
+  admin:      'Admin',
   operator:   'Operator',
-  technician: 'Teknisyen',
-  driver:     'Surucu',
+  technician: 'Technician',
+  driver:     'Driver',
 };
 
 export default function Sidebar({ view, setView, hasSession }) {
@@ -212,7 +212,7 @@ export default function Sidebar({ view, setView, hasSession }) {
             className="w-full flex items-center gap-2 text-xs text-gray-500 hover:text-red-400 transition-colors py-1"
           >
             <IconLogout />
-            <span>Cikis Yap</span>
+            <span>Sign Out</span>
           </button>
           <p className="text-gray-700 text-xs mt-2">Group 18 · FSE 2026</p>
         </div>
