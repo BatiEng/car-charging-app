@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { GoogleMap, MarkerF } from '@react-google-maps/api';
 import { USER_LOCATION } from '../constants';
 import { getMarkerIcon, getUserMarkerIcon, STATUS_COLOR, pad2, todayISO, tomorrowISO } from '../utils/helpers';
-import { createReservation, cancelReservation, getReservations, getChargerAvailability } from '../services/api';
+import { createReservation, cancelReservation, getReservations, getChargerAvailability, getDemoTime } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const MAP_STYLE = { width: '100%', height: '220px', borderRadius: '12px', overflow: 'hidden' };
@@ -17,11 +17,25 @@ export default function Reservation({
   const [charger,    setCharger]    = useState(null);
   const [date,       setDate]       = useState(todayISO());
   const [duration,   setDuration]   = useState(1);
+  const [demoNow,    setDemoNow]    = useState(null); // demo sunucu saati
   const [slot,       setSlot]       = useState(null);
   const [confirmed,  setConfirmed]  = useState(false);
   const [resData,    setResData]    = useState(null);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState('');
+
+  // Demo zamanını yükle (tarih/slot filtresi için)
+  useEffect(() => {
+    getDemoTime()
+      .then(d => {
+        const dt = new Date(d.demo_time.replace(' ', 'T'));
+        if (!isNaN(dt.getTime())) {
+          setDemoNow(dt);
+          setDate(dt.toISOString().slice(0, 10)); // tarihi demo tarihine ayarla
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Existing reservations to check for taken slots — { start, end } formatında sakla
   const [takenRanges, setTakenRanges] = useState([]);
@@ -90,16 +104,21 @@ export default function Reservation({
     (c) => c.connector_type === (selectedVehicle.connector_type || selectedVehicle.connector) && c.status !== 'available'
   );
 
+  const demoDateStr     = demoNow ? demoNow.toISOString().slice(0, 10) : todayISO();
+  const demoTomorrowStr = demoNow
+    ? new Date(demoNow.getTime() + 86_400_000).toISOString().slice(0, 10)
+    : tomorrowISO();
+
   const getSlots = () => {
     const out = [];
-    const isToday = date === todayISO();
-    const now     = new Date();
-    const nowMins = isToday ? now.getHours() * 60 + now.getMinutes() : -1;
+    const nowRef  = demoNow || new Date();
+    const isToday = date === demoDateStr;
+    const nowMins = isToday ? nowRef.getHours() * 60 + nowRef.getMinutes() : -1;
 
     for (let m = 0; m <= 23 * 60; m += 30) {
       const endM = m + duration * 60;
       if (endM > 24 * 60) continue; // gece yarısından taşanları atla
-      // Bugün için geçmiş saatleri gösterme
+      // Demo zamanına göre geçmiş saatleri gösterme
       if (isToday && endM <= nowMins) continue;
       const time    = `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`;
       const endTime = endM === 24 * 60 ? '00:00' : `${pad2(Math.floor(endM / 60))}:${pad2(endM % 60)}`;
@@ -317,7 +336,7 @@ export default function Reservation({
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Tarih</label>
               <input
-                type="date" min={todayISO()} max={tomorrowISO()} value={date}
+                type="date" min={demoDateStr} max={demoTomorrowStr} value={date}
                 onChange={(e) => { setDate(e.target.value); setSlot(null); }}
                 className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />

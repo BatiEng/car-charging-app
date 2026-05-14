@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { fmtTime } from '../utils/helpers';
 import {
   getReservations, startSession, endSession,
@@ -17,28 +17,39 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
   const [pinError,     setPinError]       = useState('');
   const [starting,     setStarting]       = useState(false);
 
-  //  Live session state 
-  const [elapsed,  setElapsed]  = useState(() => {
-    try { return parseInt(localStorage.getItem('ev_session_elapsed') || '0'); } catch { return 0; }
-  });
-  const [kwh,      setKwh]      = useState(() => {
-    try { return parseFloat(localStorage.getItem('ev_session_kwh') || '0'); } catch { return 0; }
-  });
+  //  Live session state
   const [done,     setDone]     = useState(false);
   const [receipt,  setReceipt]  = useState(null);
   const [stopping, setStopping] = useState(false);
 
-  //  Demo time polling 
+  //  Demo time polling
   const [demoTimeMs,    setDemoTimeMs]    = useState(null);
   // After extension, override local reservation end time
   const [resEndOverride, setResEndOverride] = useState(null);
+
+  //  Derive kwh + elapsed from demo time (not real seconds)
+  const startDemoMs = useMemo(() => {
+    if (!activeSession?.started_at) return null;
+    const dt = new Date(activeSession.started_at.replace(' ', 'T'));
+    return isNaN(dt.getTime()) ? null : dt.getTime();
+  }, [activeSession?.started_at]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const powerKwTop = activeSession
+    ? parseFloat(activeSession.charger_power || activeSession.power || 22)
+    : 22;
+
+  const elapsedDemoMs = (demoTimeMs !== null && startDemoMs !== null)
+    ? Math.max(0, demoTimeMs - startDemoMs)
+    : 0;
+
+  const kwh     = parseFloat((powerKwTop * elapsedDemoMs / 3_600_000).toFixed(4));
+  const elapsed = Math.floor(elapsedDemoMs / 1000);
 
   //  Extension state 
   const [extCheck,  setExtCheck]  = useState(null);
   const [extending, setExtending] = useState(false);
   const [extResult, setExtResult] = useState(null);
 
-  const timerRef          = useRef(null);
   const demoTimerRef      = useRef(null);
   const overstayMarkedRef = useRef(false);
 
@@ -111,26 +122,6 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     return () => clearInterval(demoTimerRef.current);
   }, [activeSession, done, pollDemoTime]);
 
-  //  kWh accumulation timer (real seconds, actual rate) 
-  useEffect(() => {
-    if (!activeSession || done) return;
-    const powerKw    = parseFloat(activeSession.charger_power || activeSession.power || 22);
-    const kwhPerTick = powerKw / 3600; // actual kWh per real second
-
-    timerRef.current = setInterval(() => {
-      setElapsed(e => {
-        const next = e + 1;
-        localStorage.setItem('ev_session_elapsed', next);
-        return next;
-      });
-      setKwh(prev => {
-        const next = parseFloat((prev + kwhPerTick).toFixed(4));
-        localStorage.setItem('ev_session_kwh', next);
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, [activeSession, done]);
 
   //  Mark charger as overstay once when phase transitions 
   useEffect(() => {
@@ -148,7 +139,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     setExtResult(null);
   }, [activeSession]);
 
-  //  Clear localStorage when session ends 
+  //  Clear localStorage when session ends
   useEffect(() => {
     if (done) {
       localStorage.removeItem('ev_session_elapsed');
@@ -175,7 +166,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
         brand:          selectedRes.brand,
         model:          selectedRes.model,
       });
-      setKwh(0); setElapsed(0); setDone(false);
+      setDone(false);
     } catch (err) {
       setPinError(err.message);
     } finally {
@@ -183,9 +174,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  //  Handle manual stop session 
+  //  Handle manual stop session
   const handleStop = async () => {
-    clearInterval(timerRef.current);
     clearInterval(demoTimerRef.current);
     setStopping(true);
     // overstay_minutes based on demo time vs reservation end + grace
@@ -193,6 +183,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     try {
       const res = await endSession(activeSession.session_id, kwh, overstayMins);
       setReceipt(res.receipt);
+      // localStorage'dan temizle — yeniden açılınca sanki aktifmiş gibi gösterilmesin
+      setActiveSession(null);
       setDone(true);
     } catch (err) {
       alert(err.message);
@@ -229,7 +221,69 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     }
   };
 
-  //  No session yet — show PIN entry 
+  //  Completed — önce kontrol et (activeSession artık null olabilir)
+  if (done) {
+    const r = receipt || {};
+    return (
+      <div className="p-4 sm:p-8 max-w-xl mx-auto">
+        <div className="bg-white rounded-lg border border-blue-200 p-5 sm:p-8 text-center">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sarj Tamamlandi!</h2>
+          <p className="text-gray-500 text-sm mb-6">{r.vehicle || 'Arac'} sarj edildi.</p>
+
+          <div className="bg-gray-50 rounded-xl p-5 text-left space-y-2.5 text-sm mb-6">
+            {[
+              ['Istasyon',    r.station],
+              ['Arac',        r.vehicle],
+              ['Baslangic',   r.start_time  ? new Date(r.start_time).toLocaleString('tr-TR') : '—'],
+              ['Bitis',       r.end_time    ? new Date(r.end_time).toLocaleString('tr-TR')   : '—'],
+              ['Tuketim',     r.kwh_consumed != null ? `${r.kwh_consumed} kWh` : '—'],
+              ['Birim Fiyat', r.price_per_kwh ? `${r.price_per_kwh} TL/kWh` : '—'],
+              ['Gercek Sure', (r.start_time && r.end_time)
+                ? fmtTime(Math.max(0, Math.round((new Date(r.end_time) - new Date(r.start_time)) / 1000)))
+                : '—'],
+            ].map(([k, v]) => v ? (
+              <div key={k} className="flex justify-between">
+                <span className="text-gray-500">{k}</span>
+                <span className="font-medium text-gray-800">{v}</span>
+              </div>
+            ) : null)}
+            {r.refund > 0 && (
+              <div className="flex justify-between text-blue-600">
+                <span>Iade (kullanilmayan sure)</span>
+                <span className="font-semibold">+{r.refund} TL</span>
+              </div>
+            )}
+            {r.overstay_minutes > 0 && (
+              <div className="flex justify-between text-red-500">
+                <span>Overstay Cezasi ({parseFloat(r.overstay_minutes).toFixed(1)} dk)</span>
+                <span className="font-semibold">-{r.overstay_penalty} TL</span>
+              </div>
+            )}
+            <div className="flex justify-between border-t border-gray-200 pt-2.5">
+              <span className="font-bold text-gray-900">Toplam Ucret</span>
+              <span className="font-bold text-blue-600 text-xl">
+                {r.total_cost != null ? `${r.total_cost} TL` : '—'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => { setDone(false); setView('vehicles'); }}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
+          >
+            Ana Sayfaya Don
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  //  No session yet — show PIN entry
   if (!activeSession) {
     return (
       <div className="p-4 sm:p-8 max-w-xl mx-auto space-y-6">
@@ -313,75 +367,8 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
     );
   }
 
-  //  Completed 
-  if (done) {
-    const r = receipt || {};
-    return (
-      <div className="p-4 sm:p-8 max-w-xl mx-auto">
-        <div className="bg-white rounded-lg border border-blue-700 p-5 sm:p-8 text-center">
-          <div className="w-20 h-20 bg-blue-900/50 rounded-full flex items-center justify-center text-4xl mx-auto mb-5">
-            
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Şarj Tamamlandı!</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            {activeSession.brand} {activeSession.model} şarj edildi.
-          </p>
-
-          <div className="bg-gray-50 rounded-xl p-5 text-left space-y-2.5 text-sm mb-6">
-            {[
-              ['İstasyon',      r.station       || activeSession.station_name],
-              ['Araç',          r.vehicle       || `${activeSession.brand} ${activeSession.model} (${activeSession.plate})`],
-              ['Başlangıç',     r.start_time    ? new Date(r.start_time).toLocaleString('tr-TR') : '—'],
-              ['Bitiş',         r.end_time      ? new Date(r.end_time).toLocaleString('tr-TR') : '—'],
-              ['Tüketim',       r.kwh_consumed  ? `${r.kwh_consumed} kWh` : `${kwh.toFixed(2)} kWh`],
-              ['Birim Fiyat',   r.price_per_kwh ? `${r.price_per_kwh} TL/kWh` : '—'],
-              ['Gerçek Süre',   fmtTime(elapsed)],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between">
-                <span className="text-gray-500">{k}</span>
-                <span className="font-medium text-gray-800">{v}</span>
-              </div>
-            ))}
-            {r.refund > 0 && (
-              <div className="flex justify-between text-blue-400">
-                <span>İade (kullanılmayan süre)</span>
-                <span className="font-semibold">+{r.refund} TL</span>
-              </div>
-            )}
-            {r.overstay_minutes > 0 && (
-              <div className="flex justify-between text-red-400">
-                <span> Overstay Cezası ({parseFloat(r.overstay_minutes).toFixed(1)} dk)</span>
-                <span className="font-semibold">-{r.overstay_penalty} TL</span>
-              </div>
-            )}
-            <div className="flex justify-between border-t border-gray-300 pt-2.5">
-              <span className="font-bold text-gray-900">Toplam Ücret</span>
-              <span className="font-bold text-blue-400 text-xl">
-                {r.total_cost ? `${r.total_cost} TL` : `${(kwh * 4).toFixed(2)} TL`}
-              </span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setActiveSession(null);
-              setDone(false);
-              localStorage.removeItem('ev_active_session');
-              localStorage.removeItem('ev_session_elapsed');
-              localStorage.removeItem('ev_session_kwh');
-              setView('vehicles');
-            }}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-colors"
-          >
-            Ana Sayfaya Dön
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  //  Active Session Live View 
-  const powerKw     = parseFloat(activeSession.charger_power || 22);
+  //  Active Session Live View
+  const powerKw     = powerKwTop;
   const pricePerKwh = parseFloat(activeSession.reservation?.price_per_kwh || 4);
   const cost        = (kwh * pricePerKwh).toFixed(2);
   const isOverstay  = phase === 'overstay';

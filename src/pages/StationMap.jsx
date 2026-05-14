@@ -438,7 +438,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'
             }`}
           >
-            {showFavOnly ? ' Favorilerim' : ' Favorilerim'}
+            {showFavOnly ? 'Favorilerim (aktif)' : 'Favorilerim'}
           </button>
         )}
 
@@ -613,12 +613,18 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                         <button
                           onClick={(e) => handleToggleFavorite(e, station.id)}
                           disabled={favLoading === station.id}
-                          className={`text-base leading-none transition-all ${
-                            favLoading === station.id ? 'opacity-40' : 'hover:scale-125'
-                          }`}
-                          title={favoriteIds.has(station.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
+                          className={`transition-all ${favLoading === station.id ? 'opacity-40' : 'hover:scale-125'}`}
+                          title={favoriteIds.has(station.id) ? 'Favoriden kaldir' : 'Favorilere ekle'}
                         >
-                          {favoriteIds.has(station.id) ? '' : ''}
+                          {favoriteIds.has(station.id) ? (
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-500">
+                              <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/>
+                            </svg>
+                          ) : (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4 text-gray-400 hover:text-red-400">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                          )}
                         </button>
                       )}
                       <button
@@ -640,12 +646,18 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
                   <button
                     onClick={(e) => handleToggleFavorite(e, selectedStation.id)}
                     disabled={favLoading === selectedStation.id}
-                    className={`text-xl leading-none ml-2 transition-all shrink-0 ${
-                      favLoading === selectedStation.id ? 'opacity-40' : 'hover:scale-125'
-                    }`}
-                    title={favoriteIds.has(selectedStation.id) ? 'Favoriden kaldır' : 'Favorilere ekle'}
+                    className={`ml-2 transition-all shrink-0 ${favLoading === selectedStation.id ? 'opacity-40' : 'hover:scale-125'}`}
+                    title={favoriteIds.has(selectedStation.id) ? 'Favoriden kaldir' : 'Favorilere ekle'}
                   >
-                    {favoriteIds.has(selectedStation.id) ? '' : ''}
+                    {favoriteIds.has(selectedStation.id) ? (
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-red-500">
+                        <path d="M12 21.593c-5.63-5.539-11-10.297-11-14.402 0-3.791 3.068-5.191 5.281-5.191 1.312 0 4.151.501 5.719 4.457 1.59-3.968 4.464-4.447 5.726-4.447 2.54 0 5.274 1.621 5.274 5.181 0 4.069-5.136 8.625-11 14.402z"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-gray-400 hover:text-red-400">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                      </svg>
+                    )}
                   </button>
                 )}
               </div>
