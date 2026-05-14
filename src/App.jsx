@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useJsApiLoader } from '@react-google-maps/api';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { getSessions }    from './services/api';
 import Sidebar             from './components/Sidebar';
 import Login               from './pages/Login';
 import VehicleRegistration from './pages/VehicleRegistration';
@@ -44,6 +45,27 @@ function AppInner() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [reservation,     setReservation]     = useState(null);
 
+  // Persist active session across refreshes
+  // Yüklenirken kullanıcı ID'sini kontrol et — başka hesaba ait veri gösterilmesin
+  const [activeSession, setActiveSessionRaw] = useState(() => {
+    try {
+      const s = localStorage.getItem('ev_active_session');
+      if (!s) return null;
+      const parsed = JSON.parse(s);
+      // Oturum verisi mevcut kullanıcıya aitse yükle, değilse temizle
+      if (user && parsed.user_id && String(parsed.user_id) !== String(user.id)) {
+        localStorage.removeItem('ev_active_session');
+        return null;
+      }
+      return parsed;
+    } catch { return null; }
+  });
+  const setActiveSession = (s) => {
+    setActiveSessionRaw(s);
+    if (s) localStorage.setItem('ev_active_session', JSON.stringify(s));
+    else   localStorage.removeItem('ev_active_session');
+  };
+
   // Kullanıcı çıkış yapınca (user→null) tüm filtre/seçim state'leri temizle
   // Giriş yapınca role'e göre doğru view'a yönlendir
   useEffect(() => {
@@ -52,7 +74,11 @@ function AppInner() {
       setSelectedVehicle(null);
       setSelectedStation(null);
       setReservation(null);
+      // Başka hesap açılınca önceki kullanıcının oturum verisi görünmesin
+      setActiveSession(null);
       try { localStorage.removeItem('ev_view'); } catch {}
+      try { localStorage.removeItem('ev_session_elapsed'); } catch {}
+      try { localStorage.removeItem('ev_session_kwh'); } catch {}
       return;
     }
     const adminViews    = ['admin-users','admin-stations','admin-reservations','admin-sessions','admin-revenue','admin-vehicles','admin-issues','admin-map'];
@@ -63,18 +89,39 @@ function AppInner() {
     if (user.role === 'operator'   && !operatorViews.includes(view)) setView('operator');
     if (user.role === 'technician' && !techViews.includes(view))     setView('technician');
     if (user.role === 'driver'     && !driverViews.includes(view))   setView('vehicles');
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Persist active session across refreshes
-  const [activeSession, setActiveSessionRaw] = useState(() => {
-    try { const s = localStorage.getItem('ev_active_session'); return s ? JSON.parse(s) : null; }
-    catch { return null; }
-  });
-  const setActiveSession = (s) => {
-    setActiveSessionRaw(s);
-    if (s) localStorage.setItem('ev_active_session', JSON.stringify(s));
-    else   localStorage.removeItem('ev_active_session');
-  };
+    // Sürücü giriş yaptığında aktif şarj seansı varsa geri yükle
+    if (user.role === 'driver') {
+      getSessions()
+        .then(sessions => {
+          const active = Array.isArray(sessions) ? sessions.find(s => s.status === 'active') : null;
+          if (active) {
+            setActiveSession({
+              session_id:     active.id,
+              started_at:     active.start_time,
+              user_id:        user.id,
+              reservation: {
+                reservation_date: active.reservation_date,
+                start_time:       active.res_start_time,
+                end_time:         active.res_end_time,
+                price_per_kwh:    active.price_per_kwh,
+              },
+              station_name:   active.station_name,
+              station_address: active.station_address,
+              charger_power:  active.power,
+              charger_code:   active.charger_code,
+              connector_type: active.connector_type,
+              price_per_kwh:  active.price_per_kwh,
+              plate:          active.plate,
+              brand:          active.brand,
+              model:          active.model,
+            });
+            setView('session');
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // view değişince localStorage'a kaydet
   useEffect(() => {

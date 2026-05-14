@@ -363,7 +363,7 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
     visibleStations.flatMap(s => (s.chargers || []).map(c => c.connector_type))
   )].filter(Boolean);
 
-  const STATUS_LABEL = { available: 'Müsait', occupied: 'Dolu', offline: 'Çevrimdışı', maintenance: ' Bakımda', inactive: 'Pasif' };
+  const STATUS_LABEL = { available: 'Müsait', offline: 'Çevrimdışı', maintenance: ' Bakımda' };
 
   return (
     <div className="flex flex-col h-full">
@@ -446,10 +446,8 @@ export default function StationMap({ isLoaded, selectedStation, setSelectedStati
         <div className="hidden sm:flex ml-auto items-center gap-3 text-xs text-gray-500 flex-wrap">
           {[
             { key: 'available',   label: 'Müsait' },
-            { key: 'occupied',    label: 'Dolu' },
             { key: 'offline',     label: 'Çevrimdışı' },
             { key: 'maintenance', label: 'Bakımda' },
-            { key: 'inactive',    label: 'Pasif' },
           ].map(({ key, label }) => (
             <span key={key} className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: STATUS_COLOR[key] }} />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { fmtTime } from '../utils/helpers';
+import { useAuth } from '../context/AuthContext';
 import {
   getReservations, startSession, endSession,
   checkExtension, extendSession, markSessionOverstay,
@@ -10,6 +11,7 @@ const GRACE_SECONDS   = 120;  // 2 dakika grace period
 const PENALTY_PER_MIN = 2.0;  // TL per overstay minute
 
 export default function ChargingSession({ activeSession, setActiveSession, setView }) {
+  const { user } = useAuth();
   //  PIN entry / session start 
   const [reservations, setReservations]   = useState([]);
   const [selectedRes,  setSelectedRes]    = useState(null);
@@ -158,6 +160,7 @@ export default function ChargingSession({ activeSession, setActiveSession, setVi
       setActiveSession({
         session_id:     result.session_id,
         started_at:     result.started_at,
+        user_id:        user?.id,          // başka hesap kontrolü için
         reservation:    selectedRes,
         station_name:   selectedRes.station_name,
         charger_power:  selectedRes.charger_power,
