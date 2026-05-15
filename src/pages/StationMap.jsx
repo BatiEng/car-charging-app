@@ -33,8 +33,8 @@ function IssueModal({ station, onClose }) {
   const chargers = station.chargers || [];
 
   const handleSubmit = async () => {
-    if (!form.title.trim())       { setErr('Başlık gerekli'); return; }
-    if (!form.description.trim()) { setErr('Açıklama gerekli'); return; }
+    if (!form.title.trim())       { setErr('Title required'); return; }
+    if (!form.description.trim()) { setErr('Description required'); return; }
     setSaving(true); setErr('');
     try {
       await reportIssue({

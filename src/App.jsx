@@ -136,7 +136,7 @@ function AppInner() {
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
           <div className="text-5xl mb-4 animate-pulse"></div>
-          <p className="text-gray-500">Yükleniyor…</p>
+          <p className="text-gray-500">Loading…</p>
         </div>
       </div>
     );
